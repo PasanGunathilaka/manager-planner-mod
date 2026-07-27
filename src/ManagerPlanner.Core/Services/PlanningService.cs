@@ -71,4 +71,38 @@ public class PlanningService
             .Select(u => u.Id)
             .FirstAsync();
     }
+
+    public async Task<Objective> AddObjectiveAsync(int projectId, string title, string? keyResult = null)
+    {
+        PlanningRules.ValidateObjectiveTitle(title);
+
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var order = await db.Objectives.Where(o => o.ProjectId == projectId).CountAsync();
+        var objective = new Objective
+        {
+            ProjectId = projectId,
+            Title = title.Trim(),
+            KeyResult = keyResult,
+            SortOrder = order
+        };
+        db.Objectives.Add(objective);
+        await db.SaveChangesAsync();
+        return objective;
+    }
+
+    /// <summary>
+    /// Loads the full planner grid for a project: objectives → tasks → owners + nested checklist.
+    /// Tasks will be empty until backlog item 3 (Task/WorkItem) exists — expected, not a bug.
+    /// </summary>
+    public async Task<List<Objective>> GetPlannerForProjectAsync(int projectId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Objectives
+            .Where(o => o.ProjectId == projectId)
+            .OrderBy(o => o.SortOrder)
+            .Include(o => o.Tasks).ThenInclude(t => t.Assignee)
+            .Include(o => o.Tasks).ThenInclude(t => t.Owners).ThenInclude(w => w.User)
+            .Include(o => o.Tasks).ThenInclude(t => t.Checklist)
+            .ToListAsync();
+    }
 }

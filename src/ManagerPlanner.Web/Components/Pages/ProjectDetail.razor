@@ -29,6 +29,48 @@ else
         <li>Discovered: @_summary.Discovered</li>
         <li>% complete: @_summary.PercentComplete%</li>
     </ul>
+
+    <h2>Planner Grid</h2>
+
+    @if (!string.IsNullOrEmpty(_objectiveErrorMessage))
+    {
+        <p style="color: red;">@_objectiveErrorMessage</p>
+    }
+
+    <EditForm Model="this" OnValidSubmit="AddObjectiveAsync">
+        <label>
+            Title:
+            <InputText @bind-Value="_newObjectiveTitle" />
+        </label>
+        <button type="submit">Add</button>
+    </EditForm>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Tasks</th>
+                <th>Owner / status</th>
+                <th>Progress checklist</th>
+            </tr>
+        </thead>
+    </table>
+
+    @if (_objectives is null)
+    {
+        <p>Loading objectives&hellip;</p>
+    }
+    else if (_objectives.Count == 0)
+    {
+        <p>No objectives yet.</p>
+    }
+    else
+    {
+        @foreach (var objective in _objectives)
+        {
+            <h3>@objective.Title</h3>
+            <p>No tasks yet.</p>
+        }
+    }
 }
 
 @code {
@@ -36,14 +78,35 @@ else
     public int Id { get; set; }
 
     private ProjectSummary? _summary;
+    private List<Objective>? _objectives;
+    private string _newObjectiveTitle = string.Empty;
+    private string? _objectiveErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
         _summary = await PlanningService.GetProjectSummaryAsync(Id);
+        _objectives = await PlanningService.GetPlannerForProjectAsync(Id);
     }
 
     private async Task RefreshAsync()
     {
         _summary = await PlanningService.GetProjectSummaryAsync(Id);
+        _objectives = await PlanningService.GetPlannerForProjectAsync(Id);
+    }
+
+    private async Task AddObjectiveAsync()
+    {
+        try
+        {
+            await PlanningService.AddObjectiveAsync(Id, _newObjectiveTitle);
+
+            _newObjectiveTitle = string.Empty;
+            _objectiveErrorMessage = null;
+            _objectives = await PlanningService.GetPlannerForProjectAsync(Id);
+        }
+        catch (ManagerPlanner.Core.Validation.ValidationException ex)
+        {
+            _objectiveErrorMessage = ex.Message;
+        }
     }
 }
