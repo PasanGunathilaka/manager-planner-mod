@@ -95,3 +95,33 @@ Browser-based UI verification (claude-in-chrome) of the Blazor Server Interactiv
 For future Blazor Server (or any SignalR-interactive) UI verification via claude-in-chrome: (a) always use form_input for text/textarea fields, never computer.type; (b) always call read_page immediately before a click with no intervening tool calls, since refs can go stale after any re-render; (c) when a click appears to have no effect, verify via server-log query-count diffing (count matching log lines before/after) before concluding the feature is broken -- this distinguishes 'the click never reached the handler' from 'the handler ran but rendering didn't visibly update', which are very different bugs.
 
 ---
+
+## [L7] agent_issue — Blazor build failed with a file-lock error (MSB3027/MSB30...
+
+**When:** 2026-07-27 12:22 UTC
+**Category:** agent_issue
+**Priority:** medium
+**Status:** pending
+
+### Detail
+Blazor build failed with a file-lock error (MSB3027/MSB3021) because Visual Studio 2022 had ManagerPlanner.Web.exe running/debugging, holding the DLL open -- not a leftover process from a prior specclaw session this time. Confirmed via 'Microsoft Visual Studio 2022 (PID), ManagerPlanner.Web (PID)' in the lock error message before killing anything. Asked the user for confirmation before stopping the process since it looked like their own active work, not build-tooling cleanup.
+
+### Action
+When a dotnet build file-lock error names 'Microsoft Visual Studio' as the lock holder (not a bare dotnet.exe/ManagerPlanner.Web.exe from an earlier specclaw run), treat it as the user's own active session and confirm before killing the process -- don't assume every lock is a leftover artifact safe to clear unilaterally.
+
+---
+
+## [L8] agent_issue — claude-in-chrome click dispatch failed wholesale during T...
+
+**When:** 2026-07-27 12:23 UTC
+**Category:** agent_issue
+**Priority:** medium
+**Status:** pending
+
+### Detail
+claude-in-chrome click dispatch failed wholesale during T2 verification -- not just stale refs (the item-1 pattern already documented), but a case where EVEN a plain <a href> link click and a previously-working 'Refresh' button both silently did nothing, on both the original tab and a freshly closed-and-recreated tab, with the WebSocket circuit connected and no console/server errors. A computer.action:'screenshot' call had also timed out earlier with 'renderer may be frozen or unresponsive', suggesting the underlying Chrome renderer process itself was wedged, not just Blazor-specific state. Recovered by falling back to a small scratch console app (referencing ManagerPlanner.Core directly, using a minimal IDbContextFactory wrapper around the same SQLite file) that called the real PlanningService.AddObjectiveAsync/GetPlannerForProjectAsync methods in-process -- this verified the actual business logic (AC2/AC3/AC4) without depending on the browser at all, then get_page_text (which kept working throughout, unlike clicks) confirmed the rendering (AC5/AC6/AC8) after reloading the page.
+
+### Action
+When claude-in-chrome clicks stop working across ALL elements (not just one ref) including plain navigation links, and closing/recreating the tab doesn't fix it, don't keep retrying clicks -- the renderer itself may be wedged. Fall back to: (1) get_page_text/read_page for static rendering checks (these kept working), and (2) a small scratch console app referencing the app's own library project to call service methods directly in-process for anything requiring an actual state-changing action -- this is a reliable, fast way to verify business logic when browser interactivity is unavailable, and works for any .NET project with a testable service layer.
+
+---
