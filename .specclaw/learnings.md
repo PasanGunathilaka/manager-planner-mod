@@ -65,3 +65,18 @@ specclaw-verify collect's changed-files evidence dump misreported 8 of 9 ported 
 The evidence-extraction script behind specclaw-verify collect appears to resolve some changed-file paths as bare filenames instead of full repo-relative paths from tasks.md's Files: lists (a comma-separated multi-path line, e.g. T2's declares 'src/ManagerPlanner.Core/Domain/User.cs, Project.cs, Objective.cs, ...' with only the first entry fully qualified) -- fix the parser to carry the directory forward across comma-separated entries in a single Files: line, or always resolve against git ls-files.
 
 ---
+
+## [L5] agent_issue — specclaw-pr's first-run test-policy prompt (check_test_po...
+
+**When:** 2026-07-27 06:46 UTC
+**Category:** agent_issue
+**Priority:** high
+**Status:** pending
+
+### Detail
+specclaw-pr's first-run test-policy prompt (check_test_policy in bin/specclaw-pr) does 'read -r policy </dev/tty' in a retry loop with no non-interactive fallback. In this non-interactive shell environment /dev/tty doesn't exist, so the read fails every iteration and the while-true loop spins forever printing '/dev/tty: No such device or address', never timing out. Had to kill the process manually (via PowerShell Stop-Process) and pre-set pr.test_policy in config.yaml to skip the prompt on retry. Separately, /specclaw:pr also assumes an unmerged feature branch exists to PR from, but git.strategy: branch-per-change's specclaw-build finalize step already merges the branch into the base branch locally as its designed behavior -- so by the time /specclaw:pr runs, head branch == base branch and 'gh pr create' correctly refuses ('head branch is the same as base branch'). Resolved by pushing master directly instead of opening a PR (user's explicit choice over rewinding local history to fabricate a diff).
+
+### Action
+(1) specclaw-pr should detect a missing/non-functional /dev/tty (e.g. check  or  first) and fail fast with an actionable error instead of spinning, or accept the policy via a CLI flag/env var for non-interactive runs. (2) For git.strategy: branch-per-change projects that also want GitHub PR review, specclaw-build's finalize step and /specclaw:pr are currently incompatible -- finalize should not auto-merge to base when a PR is the intended next step (or config needs a third strategy like 'branch-per-change-pr' that pushes instead of merging). Flag this to a human before it recurs on backlog item 1's PR.
+
+---
