@@ -1,0 +1,84 @@
+@page "/projects"
+@rendermode InteractiveServer
+@inject PlanningService PlanningService
+
+<PageTitle>Projects</PageTitle>
+
+<h1>Projects</h1>
+
+@if (_projects is null)
+{
+    <p>Loading projects&hellip;</p>
+}
+else if (_projects.Count == 0)
+{
+    <p>No projects yet.</p>
+}
+else
+{
+    <ul>
+        @foreach (var project in _projects)
+        {
+            <li>
+                <a href="@($"/projects/{project.Id}")">@project.Name</a>
+                @if (!string.IsNullOrWhiteSpace(project.Description))
+                {
+                    <text> &mdash; @project.Description</text>
+                }
+            </li>
+        }
+    </ul>
+}
+
+<h2>Add project</h2>
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <p style="color: red;">@_errorMessage</p>
+}
+
+<EditForm Model="this" OnValidSubmit="AddProjectAsync">
+    <div>
+        <label>
+            Name:
+            <InputText @bind-Value="_newName" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Description:
+            <InputText @bind-Value="_newDescription" />
+        </label>
+    </div>
+    <button type="submit">Add project</button>
+</EditForm>
+
+@code {
+    private List<Project>? _projects;
+    private string _newName = string.Empty;
+    private string? _newDescription;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _projects = await PlanningService.GetProjectsAsync();
+    }
+
+    private async Task AddProjectAsync()
+    {
+        try
+        {
+            var ownerId = await PlanningService.GetCurrentManagerIdAsync();
+            await PlanningService.AddProjectAsync(_newName, _newDescription, ownerId);
+
+            _newName = string.Empty;
+            _newDescription = null;
+            _errorMessage = null;
+            _projects = await PlanningService.GetProjectsAsync();
+        }
+        catch (ManagerPlanner.Core.Validation.ValidationException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+}
