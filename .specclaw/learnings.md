@@ -80,3 +80,18 @@ specclaw-pr's first-run test-policy prompt (check_test_policy in bin/specclaw-pr
 (1) specclaw-pr should detect a missing/non-functional /dev/tty (e.g. check  or  first) and fail fast with an actionable error instead of spinning, or accept the policy via a CLI flag/env var for non-interactive runs. (2) For git.strategy: branch-per-change projects that also want GitHub PR review, specclaw-build's finalize step and /specclaw:pr are currently incompatible -- finalize should not auto-merge to base when a PR is the intended next step (or config needs a third strategy like 'branch-per-change-pr' that pushes instead of merging). Flag this to a human before it recurs on backlog item 1's PR.
 
 ---
+
+## [L6] agent_issue — Browser-based UI verification (claude-in-chrome) of the B...
+
+**When:** 2026-07-27 09:54 UTC
+**Category:** agent_issue
+**Priority:** medium
+**Status:** pending
+
+### Detail
+Browser-based UI verification (claude-in-chrome) of the Blazor Server InteractiveServer pages produced two categories of false signals during T5's manual verification: (1) the computer.type action (simulated keystrokes) corrupted InputText field values under Blazor Server's round-trip binding -- typing 'Q3 Platform Migration' resulted in a persisted Project row with Name='tt', and a duplicate/extra row was created, suggesting dropped/raced keystroke events against the SignalR circuit. Switching to the form_input tool (which sets the DOM value directly in one operation) fixed this immediately and reliably. (2) Element refs returned by read_page went stale across Blazor re-renders -- clicking a previously-obtained 'Refresh' button ref sometimes silently did nothing (or, once, produced a 'no element found' error after the page had re-rendered), making the Refresh button appear broken. A clean re-test (read_page immediately before the click, with zero intervening tool calls) proved the Refresh button and its underlying GetProjectSummaryAsync re-query work correctly -- confirmed by server-log query-count diffing (exact line-count deltas around the click) and the resulting on-page counts changing to match a direct DB edit made between load and refresh.
+
+### Action
+For future Blazor Server (or any SignalR-interactive) UI verification via claude-in-chrome: (a) always use form_input for text/textarea fields, never computer.type; (b) always call read_page immediately before a click with no intervening tool calls, since refs can go stale after any re-render; (c) when a click appears to have no effect, verify via server-log query-count diffing (count matching log lines before/after) before concluding the feature is broken -- this distinguishes 'the click never reached the handler' from 'the handler ran but rendering didn't visibly update', which are very different bugs.
+
+---
