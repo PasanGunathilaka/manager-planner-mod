@@ -125,3 +125,18 @@ claude-in-chrome click dispatch failed wholesale during T2 verification -- not j
 When claude-in-chrome clicks stop working across ALL elements (not just one ref) including plain navigation links, and closing/recreating the tab doesn't fix it, don't keep retrying clicks -- the renderer itself may be wedged. Fall back to: (1) get_page_text/read_page for static rendering checks (these kept working), and (2) a small scratch console app referencing the app's own library project to call service methods directly in-process for anything requiring an actual state-changing action -- this is a reliable, fast way to verify business logic when browser interactivity is unavailable, and works for any .NET project with a testable service layer.
 
 ---
+
+## [L9] pattern — GetPlannerForProjectAsync's multi-collection Include chai...
+
+**When:** 2026-07-27 12:57 UTC
+**Category:** pattern
+**Priority:** low
+**Status:** pending
+
+### Detail
+GetPlannerForProjectAsync's multi-collection Include chain (Tasks->Owners, Tasks->Checklist) already triggers EF Core's 'Compiling a query which loads related collections for more than one collection navigation... no QuerySplittingBehavior configured' warning at runtime, even though Tasks is currently always empty. Harmless today, but this is the exact query item 3 (Task/WorkItem) will start populating with real rows.
+
+### Action
+When item 3 (or later) starts returning non-trivial Tasks/Owners/Checklist counts through this same GetPlannerForProjectAsync query, add .AsSplitQuery() to avoid a cartesian-product join blowing up row counts -- flag this during that item's design phase rather than waiting for a performance complaint.
+
+---
