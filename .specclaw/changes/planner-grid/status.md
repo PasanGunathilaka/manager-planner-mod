@@ -36,3 +36,11 @@ working throughout. Branch `specclaw/planner-grid` merged to `master`.
 ## Issues
 
 _None._
+
+## PR
+
+No separate GitHub PR — same `git.strategy: branch-per-change` constraint
+as the two prior changes: `specclaw-build finalize` had already merged
+`specclaw/planner-grid` into `master` locally, so head == base. `master`
+was already up to date on `origin` from the verify step's push:
+https://github.com/PasanGunathilaka/manager-planner-mod
