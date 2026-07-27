@@ -1,0 +1,31 @@
+﻿@page "/"
+@using ManagerPlanner.Core.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<PlanningDbContext> DbFactory
+
+<PageTitle>Manager Planner</PageTitle>
+
+<h1>Manager Planner</h1>
+
+@if (_canConnect is null)
+{
+    <p>Checking database connectivity&hellip;</p>
+}
+else if (_canConnect == true)
+{
+    <p>Database connected.</p>
+}
+else
+{
+    <p>Could not connect to the database.</p>
+}
+
+@code {
+    private bool? _canConnect;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _canConnect = await db.Database.CanConnectAsync();
+    }
+}
