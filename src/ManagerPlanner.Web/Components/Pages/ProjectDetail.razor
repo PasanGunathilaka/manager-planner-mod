@@ -1,0 +1,49 @@
+@page "/projects/{Id:int}"
+@rendermode InteractiveServer
+@using ManagerPlanner.Core.Services
+@inject PlanningService PlanningService
+
+<PageTitle>Project Detail</PageTitle>
+
+@if (_summary is null)
+{
+    <p>Loading&hellip;</p>
+}
+else if (_summary.TotalTasks == 0 && string.IsNullOrEmpty(_summary.ProjectName))
+{
+    <p>Project not found.</p>
+}
+else
+{
+    <h1>@_summary.ProjectName</h1>
+
+    <button @onclick="RefreshAsync">Refresh</button>
+
+    <ul>
+        <li>Total: @_summary.TotalTasks</li>
+        <li>Done: @_summary.Done</li>
+        <li>In progress: @_summary.InProgress</li>
+        <li>Blocked: @_summary.Blocked</li>
+        <li>Not started: @_summary.NotStarted</li>
+        <li>Overdue: @_summary.Overdue</li>
+        <li>Discovered: @_summary.Discovered</li>
+        <li>% complete: @_summary.PercentComplete%</li>
+    </ul>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ProjectSummary? _summary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _summary = await PlanningService.GetProjectSummaryAsync(Id);
+    }
+
+    private async Task RefreshAsync()
+    {
+        _summary = await PlanningService.GetProjectSummaryAsync(Id);
+    }
+}
