@@ -1,4 +1,6 @@
 using ManagerPlanner.Core.Data;
+using ManagerPlanner.Core.Domain;
+using ManagerPlanner.Core.Services;
 using ManagerPlanner.Web.Components;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +15,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDbContextFactory<PlanningDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("PlanningDatabase")));
 
+builder.Services.AddScoped<PlanningService>();
+
 var app = builder.Build();
 
 // Apply any pending EF Core migrations before serving requests (ADR-0003 —
@@ -22,6 +26,15 @@ using (var scope = app.Services.CreateScope())
     var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<PlanningDbContext>>();
     using var db = dbFactory.CreateDbContext();
     db.Database.Migrate();
+
+    // Stand-in for real authentication/multi-user support (not yet decided, ADR-0001):
+    // guarantee exactly one Manager user exists so AddProjectAsync's required ownerId is
+    // always resolvable without full DbSeeder-style sample data (item 11).
+    if (!db.Users.Any(u => u.Role == UserRole.Manager))
+    {
+        db.Users.Add(new User { FullName = "Manager", Email = "manager@example.com", Role = UserRole.Manager });
+        db.SaveChanges();
+    }
 }
 
 // Configure the HTTP request pipeline.
