@@ -38,3 +38,11 @@ false negatives during Refresh-button testing — see `.specclaw/learnings.md`.
 ## Issues
 
 _None._
+
+## PR
+
+No separate GitHub PR — same `git.strategy: branch-per-change` constraint
+as `scaffold-blazor-solution`: `specclaw-build finalize` had already merged
+`specclaw/project-management` into `master` locally, so head == base.
+Per user's choice, `master` was pushed directly to `origin/master`:
+https://github.com/PasanGunathilaka/manager-planner-mod
