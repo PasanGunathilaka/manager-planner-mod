@@ -1,6 +1,6 @@
 # Project Context
 
-_Last updated: 2026-07-27 — after "project-management"._
+_Last updated: 2026-07-27 — after "planner-grid"._
 
 ## Architecture Overview
 
@@ -25,9 +25,12 @@ Data flow: `Program.cs` registers `PlanningDbContext` via
 Core migrations at startup (`Database.Migrate()`), bootstraps a single
 Manager `User` if none exists, then serves Razor components. Feature pages
 so far: `/projects` (browse + create) and `/projects/{id}` (summary +
-refresh) — the first slice of the legacy app's Project management surface.
-"Switching the active project" is URL navigation between `/projects/{id}`
-rows; there is no separate "current project" session state.
+refresh, plus a "Planner Grid" section: add-objective form, fixed 3-column
+header, one heading per objective with a "No tasks yet." placeholder until
+task rendering exists) — the first two slices of the legacy app's feature
+surface (Project management, then Objective grouping). "Switching the
+active project" is URL navigation between `/projects/{id}` rows; there is
+no separate "current project" session state.
 
 ## Coding Style & Conventions
 
@@ -101,7 +104,18 @@ rows; there is no separate "current project" session state.
   Blazor's async re-renders, and a stale-ref click can make a genuinely
   working feature (e.g. a "Refresh" button) look broken. If a click seems
   to do nothing, diff server-log query counts before/after before
-  concluding the feature is broken.
+  concluding the feature is broken. If clicks fail *wholesale* (even plain
+  `<a href>` links do nothing, on a fresh tab too) — a wedged Chrome
+  renderer, not an app bug — try dispatching via in-page JavaScript
+  (`element.click()`) first; if that also fails, fall back to a scratch
+  console app referencing `ManagerPlanner.Core` directly and calling the
+  service method in-process against the same SQLite file (`planner-grid`,
+  2026-07-27).
+- **Multi-collection `Include` chains need `.AsSplitQuery()` once the
+  child collections are non-trivial.** `GetPlannerForProjectAsync`'s
+  `Tasks`→`Owners` + `Tasks`→`Checklist` Include already logs EF Core's
+  cartesian-product warning, currently harmless since `Tasks` is empty.
+  Add `.AsSplitQuery()` when item 3+ starts populating real task rows.
 
 ## Technology Decisions
 
@@ -139,8 +153,8 @@ rows; there is no separate "current project" session state.
 
 ## Recent Decisions
 
-1. **`PlanningService` methods take `IDbContextFactory<PlanningDbContext>`, not a direct `PlanningDbContext`** — deviates from the legacy constructor signature to preserve the Blazor Server DbContext-lifetime pattern; each method opens/disposes its own short-lived context (project-management, 2026-07-27).
-2. **`GetCurrentManagerIdAsync()` + startup Manager-user bootstrap** added as a deliberate, temporary stand-in for auth/multi-user support that doesn't exist yet — not a legacy port (project-management, 2026-07-27).
-3. **Migrations + EF Core Sqlite/Design packages live in `ManagerPlanner.Core`, not `.Web`** — mirrors the legacy `Core` project's single-external-dependency shape and keeps `dotnet ef` tooling self-sufficient (scaffold-blazor-solution, 2026-07-27).
-4. **Always ground-truth entity/validation/business-logic ports against the real legacy source** at `C:\Learnings\Projects\manager-planner`, not just `.specclaw/analysis/*.md` summaries — caught a real `User.OwnedTasks` type bug in item 0, and confirmed the exact `PercentComplete` rounding formula from source in item 1 (scaffold-blazor-solution / project-management, 2026-07-27).
-5. **SQLite + EF Core Migrations (not `EnsureCreated()`)** adopted from the first scaffold, per ADR-0003 (scaffold-blazor-solution, 2026-07-27).
+1. **No Key Result input in the add-objective form** — confirmed by reading the real legacy `MainViewModel.cs`/`PlannerGridView.axaml` directly: `AddObjectiveCommand` never passes a `keyResult` argument, even though `Objective.KeyResult` exists in the schema. Preserved as an inherited gap, not silently "fixed" (planner-grid, 2026-07-27).
+2. **The Planner Grid's static shell (headers, per-objective sections) is built ahead of any task data existing** — matches rebuild-backlog item 2's own merge rationale; the "No tasks yet." placeholder is an intentional, temporary state until item 3 (Task/WorkItem) ships (planner-grid, 2026-07-27).
+3. **`PlanningService` methods take `IDbContextFactory<PlanningDbContext>`, not a direct `PlanningDbContext`** — deviates from the legacy constructor signature to preserve the Blazor Server DbContext-lifetime pattern; each method opens/disposes its own short-lived context (project-management, 2026-07-27).
+4. **`GetCurrentManagerIdAsync()` + startup Manager-user bootstrap** added as a deliberate, temporary stand-in for auth/multi-user support that doesn't exist yet — not a legacy port (project-management, 2026-07-27).
+5. **Always ground-truth entity/validation/business-logic ports against the real legacy source** at `C:\Learnings\Projects\manager-planner`, not just `.specclaw/analysis/*.md` summaries — caught a real `User.OwnedTasks` type bug in item 0, confirmed the exact `PercentComplete` formula in item 1, and confirmed the no-Key-Result gap in item 2 (scaffold-blazor-solution / project-management / planner-grid, 2026-07-27).
