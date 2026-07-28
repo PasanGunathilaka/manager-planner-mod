@@ -38,6 +38,15 @@ around via in-page JS dispatch as usual.
 learning L16); fixed by committing them and re-running finalize, which
 then succeeded.
 
+## PR
+
+No separate GitHub PR — same `git.strategy: branch-per-change` constraint
+as the three prior changes: `specclaw-build finalize` had already merged
+`specclaw/task-status-transitions` into `master` locally, so `specclaw-pr`
+found head == base. `master` was already up to date on `origin` (pushed
+automatically during the verify/build steps):
+https://github.com/PasanGunathilaka/manager-planner-mod
+
 ## Agent Runs
 
 | Task | Agent | Model | Status | Duration |
