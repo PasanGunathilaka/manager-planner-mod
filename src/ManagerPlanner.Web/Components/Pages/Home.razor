@@ -9,15 +9,15 @@
 
 @if (_canConnect is null)
 {
-    <p>Checking database connectivity&hellip;</p>
+    <MudAlert Severity="Severity.Info">Checking database connectivity&hellip;</MudAlert>
 }
 else if (_canConnect == true)
 {
-    <p>Database connected.</p>
+    <MudAlert Severity="Severity.Success">Database connected.</MudAlert>
 }
 else
 {
-    <p>Could not connect to the database.</p>
+    <MudAlert Severity="Severity.Error">Could not connect to the database.</MudAlert>
 }
 
 @code {

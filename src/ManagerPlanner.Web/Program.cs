@@ -3,12 +3,15 @@ using ManagerPlanner.Core.Domain;
 using ManagerPlanner.Core.Services;
 using ManagerPlanner.Web.Components;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddMudServices();
 
 // A DbContext factory, not a single injected scoped DbContext, per ADR-0002's
 // warning to be deliberate about DbContext lifetime across a Blazor Server circuit.

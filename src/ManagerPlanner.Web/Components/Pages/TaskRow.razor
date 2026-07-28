@@ -10,12 +10,14 @@
     </td>
     <td>
         <div>@(WorkItem.Assignee?.FullName ?? "Unassigned")</div>
-        <div style="font-size:0.85em;color:#404080;">@StatusText</div>
+        <div><MudChip T="string" Color="@StatusColor" Size="Size.Small">@StatusText</MudChip></div>
         <div>
-            <button type="button" @onclick="() => SetStatusAsync(WorkItemStatus.NotStarted)">Not started</button>
-            <button type="button" @onclick="() => SetStatusAsync(WorkItemStatus.InProgress)">In progress</button>
-            <button type="button" @onclick="() => SetStatusAsync(WorkItemStatus.Blocked)">Blocked</button>
-            <button type="button" @onclick="() => SetStatusAsync(WorkItemStatus.Done)">Mark done</button>
+            <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                <MudButton OnClick="() => SetStatusAsync(WorkItemStatus.NotStarted)">Not started</MudButton>
+                <MudButton OnClick="() => SetStatusAsync(WorkItemStatus.InProgress)">In progress</MudButton>
+                <MudButton OnClick="() => SetStatusAsync(WorkItemStatus.Blocked)">Blocked</MudButton>
+                <MudButton OnClick="() => SetStatusAsync(WorkItemStatus.Done)">Mark done</MudButton>
+            </MudButtonGroup>
         </div>
     </td>
     <td>&mdash;</td>
@@ -35,6 +37,15 @@
         WorkItemStatus.Blocked => "Blocked",
         WorkItemStatus.Done => "Done",
         _ => WorkItem.Status.ToString()
+    };
+
+    private Color StatusColor => WorkItem.Status switch
+    {
+        WorkItemStatus.NotStarted => Color.Default,
+        WorkItemStatus.InProgress => Color.Info,
+        WorkItemStatus.Blocked => Color.Error,
+        WorkItemStatus.Done => Color.Success,
+        _ => Color.Default
     };
 
     private async Task SetStatusAsync(WorkItemStatus newStatus)
