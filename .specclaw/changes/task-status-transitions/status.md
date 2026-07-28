@@ -13,7 +13,7 @@
 | Design | 🟢 Complete | 1 new PlanningService method; extends TaskRow + ProjectDetail |
 | Tasks | 🟢 Complete | 2 tasks / 2 waves |
 | Build | 🟢 Complete | Both tasks done; merged to master |
-| Verify | ⚪ Pending | Run `/specclaw:verify` next |
+| Verify | ✅ Passed | Run `/specclaw:verify` next |
 
 ## Task Progress
 
