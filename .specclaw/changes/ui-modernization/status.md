@@ -46,6 +46,15 @@ delete UI anywhere in the diff.
 proactively before calling it, applying the lesson from
 `task-status-transitions`'s L16.
 
+## PR
+
+No separate GitHub PR — same `git.strategy: branch-per-change` constraint
+as the four prior changes: `specclaw-build finalize` had already merged
+`specclaw/ui-modernization` into `master` locally, so `specclaw-pr` found
+head == base. `master` was already up to date on `origin` (pushed
+automatically during the verify/build steps):
+https://github.com/PasanGunathilaka/manager-planner-mod
+
 ## Agent Runs
 
 | Task | Agent | Model | Status | Duration |
