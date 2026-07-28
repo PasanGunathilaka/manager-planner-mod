@@ -152,4 +152,28 @@ public class PlanningService
             .AsSplitQuery()
             .ToListAsync();
     }
+
+    public async Task ChangeStatusAsync(int taskId, WorkItemStatus newStatus, int changedById, string? reason = null)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var task = await db.WorkItems.FirstOrDefaultAsync(t => t.Id == taskId)
+                   ?? throw new InvalidOperationException($"Task {taskId} not found.");
+
+        if (task.Status == newStatus) return;
+
+        var change = new StatusChange
+        {
+            WorkItemId = task.Id,
+            FromStatus = task.Status,
+            ToStatus = newStatus,
+            ChangedById = changedById,
+            Reason = reason
+        };
+
+        task.Status = newStatus;
+        task.CompletedUtc = newStatus == WorkItemStatus.Done ? DateTime.UtcNow : null;
+
+        db.StatusChanges.Add(change);
+        await db.SaveChangesAsync();
+    }
 }
