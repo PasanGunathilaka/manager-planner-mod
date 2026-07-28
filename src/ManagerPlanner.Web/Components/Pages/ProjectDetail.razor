@@ -1,5 +1,4 @@
 @page "/projects/{Id:int}"
-@rendermode InteractiveServer
 @using ManagerPlanner.Core.Services
 @inject PlanningService PlanningService
 
@@ -15,96 +14,115 @@ else if (_summary.TotalTasks == 0 && string.IsNullOrEmpty(_summary.ProjectName))
 }
 else
 {
-    <h1>@_summary.ProjectName</h1>
+    <MudText Typo="Typo.h4">@_summary.ProjectName</MudText>
 
-    <button @onclick="RefreshAsync">Refresh</button>
+    <MudButton OnClick="RefreshAsync" StartIcon="@Icons.Material.Filled.Refresh">Refresh</MudButton>
 
-    <ul>
-        <li>Total: @_summary.TotalTasks</li>
-        <li>Done: @_summary.Done</li>
-        <li>In progress: @_summary.InProgress</li>
-        <li>Blocked: @_summary.Blocked</li>
-        <li>Not started: @_summary.NotStarted</li>
-        <li>Overdue: @_summary.Overdue</li>
-        <li>Discovered: @_summary.Discovered</li>
-        <li>% complete: @_summary.PercentComplete%</li>
-    </ul>
+    <MudGrid>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Total</MudText>
+                <MudText Typo="Typo.h5">@_summary.TotalTasks</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Done</MudText>
+                <MudText Typo="Typo.h5">@_summary.Done</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">In progress</MudText>
+                <MudText Typo="Typo.h5">@_summary.InProgress</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Blocked</MudText>
+                <MudText Typo="Typo.h5">@_summary.Blocked</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Not started</MudText>
+                <MudText Typo="Typo.h5">@_summary.NotStarted</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Overdue</MudText>
+                <MudText Typo="Typo.h5">@_summary.Overdue</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Discovered</MudText>
+                <MudText Typo="Typo.h5">@_summary.Discovered</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">% complete</MudText>
+                <MudText Typo="Typo.h5">@_summary.PercentComplete%</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 
-    <h2>Planner Grid</h2>
+    <MudText Typo="Typo.h5">Planner Grid</MudText>
 
     @if (!string.IsNullOrEmpty(_objectiveErrorMessage))
     {
-        <p style="color: red;">@_objectiveErrorMessage</p>
+        <MudAlert Severity="Severity.Error">@_objectiveErrorMessage</MudAlert>
     }
 
     <EditForm Model="this" OnValidSubmit="AddObjectiveAsync">
-        <label>
-            Title:
-            <InputText @bind-Value="_newObjectiveTitle" />
-        </label>
-        <button type="submit">Add</button>
+        <MudTextField @bind-Value="_newObjectiveTitle" Label="Title" />
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Add</MudButton>
     </EditForm>
 
-    <h3>Add task</h3>
+    <MudText Typo="Typo.h6">Add task</MudText>
 
     @if (!string.IsNullOrEmpty(_taskErrorMessage))
     {
-        <p style="color: red;">@_taskErrorMessage</p>
+        <MudAlert Severity="Severity.Error">@_taskErrorMessage</MudAlert>
     }
 
     <EditForm Model="this" OnValidSubmit="AddTaskAsync">
         <div>
-            <label>
-                Title:
-                <InputText @bind-Value="_newTaskTitle" />
-            </label>
+            <MudTextField @bind-Value="_newTaskTitle" Label="Title" />
         </div>
         <div>
-            <label>
-                Objective:
-                <select value="@_newTaskObjectiveId" @onchange="OnObjectiveSelected">
-                    <option value="">&mdash; Ungrouped &mdash;</option>
-                    @foreach (var objective in _objectives ?? new List<Objective>())
-                    {
-                        <option value="@objective.Id">@objective.Title</option>
-                    }
-                </select>
-            </label>
+            <MudSelect T="int?" @bind-Value="_newTaskObjectiveId" Label="Objective">
+                <MudSelectItem Value="@((int?)null)">&mdash; Ungrouped &mdash;</MudSelectItem>
+                @foreach (var objective in _objectives ?? new List<Objective>())
+                {
+                    <MudSelectItem Value="@((int?)objective.Id)">@objective.Title</MudSelectItem>
+                }
+            </MudSelect>
         </div>
         <div>
-            <label>
-                Assignee:
-                <select value="@_newTaskAssigneeId" @onchange="OnAssigneeSelected">
-                    <option value="">&mdash; Unassigned &mdash;</option>
-                    @foreach (var member in _teamMembers ?? new List<User>())
-                    {
-                        <option value="@member.Id">@member.FullName</option>
-                    }
-                </select>
-            </label>
+            <MudSelect T="int?" @bind-Value="_newTaskAssigneeId" Label="Assignee">
+                <MudSelectItem Value="@((int?)null)">&mdash; Unassigned &mdash;</MudSelectItem>
+                @foreach (var member in _teamMembers ?? new List<User>())
+                {
+                    <MudSelectItem Value="@((int?)member.Id)">@member.FullName</MudSelectItem>
+                }
+            </MudSelect>
         </div>
         <div>
-            <label>
-                Deadline:
-                <InputDate @bind-Value="_newTaskDeadline" />
-            </label>
+            <MudDatePicker @bind-Date="_newTaskDeadline" Label="Deadline" />
         </div>
         <div>
-            <label>
-                Description:
-                <InputTextArea @bind-Value="_newTaskDescription" />
-            </label>
+            <MudTextField @bind-Value="_newTaskDescription" Label="Description" Lines="3" />
         </div>
         <div>
-            <label>
-                <InputCheckbox @bind-Value="_newTaskIsDiscovered" />
-                Discovered in a meeting
-            </label>
+            <MudCheckBox @bind-Value="_newTaskIsDiscovered" Label="Discovered in a meeting" />
         </div>
-        <button type="submit">Add task</button>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Add task</MudButton>
     </EditForm>
 
-    <table>
+    <MudSimpleTable Hover="true" Dense="true">
         <thead>
             <tr>
                 <th>Tasks</th>
@@ -112,7 +130,7 @@ else
                 <th>Progress checklist</th>
             </tr>
         </thead>
-    </table>
+    </MudSimpleTable>
 
     @if (_objectives is null)
     {
@@ -120,42 +138,42 @@ else
     }
     else if (_objectives.Count == 0)
     {
-        <p>No objectives yet.</p>
+        <MudText>No objectives yet.</MudText>
     }
     else
     {
         @foreach (var objective in _objectives)
         {
-            <h3>@objective.Title</h3>
+            <MudText Typo="Typo.h6">@objective.Title</MudText>
             @if (objective.Tasks.Count == 0)
             {
-                <p>No tasks yet.</p>
+                <MudText>No tasks yet.</MudText>
             }
             else
             {
-                <table>
+                <MudSimpleTable Hover="true" Dense="true">
                     <tbody>
                         @foreach (var task in objective.Tasks)
                         {
                             <TaskRow WorkItem="task" StatusChanged="RefreshAsync" />
                         }
                     </tbody>
-                </table>
+                </MudSimpleTable>
             }
         }
     }
 
     @if (_ungroupedTasks is { Count: > 0 })
     {
-        <h3>Ungrouped</h3>
-        <table>
+        <MudText Typo="Typo.h6">Ungrouped</MudText>
+        <MudSimpleTable Hover="true" Dense="true">
             <tbody>
                 @foreach (var task in _ungroupedTasks)
                 {
                     <TaskRow WorkItem="task" StatusChanged="RefreshAsync" />
                 }
             </tbody>
-        </table>
+        </MudSimpleTable>
     }
 }
 
@@ -208,18 +226,6 @@ else
         {
             _objectiveErrorMessage = ex.Message;
         }
-    }
-
-    private void OnObjectiveSelected(ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString();
-        _newTaskObjectiveId = string.IsNullOrEmpty(value) ? null : int.Parse(value);
-    }
-
-    private void OnAssigneeSelected(ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString();
-        _newTaskAssigneeId = string.IsNullOrEmpty(value) ? null : int.Parse(value);
     }
 
     private async Task AddTaskAsync()
