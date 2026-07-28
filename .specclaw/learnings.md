@@ -140,3 +140,63 @@ GetPlannerForProjectAsync's multi-collection Include chain (Tasks->Owners, Tasks
 When item 3 (or later) starts returning non-trivial Tasks/Owners/Checklist counts through this same GetPlannerForProjectAsync query, add .AsSplitQuery() to avoid a cartesian-product join blowing up row counts -- flag this during that item's design phase rather than waiting for a performance complaint.
 
 ---
+
+## [L10] spec_gap — The proposal/spec's initial description-trimming decision...
+
+**When:** 2026-07-28 04:35 UTC
+**Category:** spec_gap
+**Priority:** medium
+**Status:** pending
+
+### Detail
+The proposal/spec's initial description-trimming decision ("Description stored exactly as passed, not trimmed") was grounded only in the legacy AddTaskAsync service method. Re-reading the actual caller, MainWindowViewModel.AddTaskAsync, during build showed it pre-trims/nulls the description before calling the service (../manager-planner/src/ExecutivePlanning.Desktop/ViewModels/MainWindowViewModel.cs:146). Caught before implementation via re-verification, but the initial spec/design would have shipped a real fidelity miss.
+
+### Action
+When grounding a ported method's fidelity against legacy source, trace the full caller-to-service call chain, not just the method signature being ported -- pre-processing done by the caller is part of the app's real behavior.
+
+---
+
+## [L11] best_practice — Naming a Blazor component parameter 'Task' (as originally...
+
+**When:** 2026-07-28 04:35 UTC
+**Category:** best_practice
+**Priority:** low
+**Status:** pending
+
+### Detail
+Naming a Blazor component parameter 'Task' (as originally planned in tasks.md for TaskRow.razor's WorkItem parameter) risks colliding with System.Threading.Tasks.Task once ImplicitUsings is enabled (it is, on ManagerPlanner.Web) -- any async method in the same component referencing the bare Task type, or calling Task.CompletedTask/Task.Delay, would resolve to the property instead. Renamed the parameter to 'WorkItem' (matching the entity type name) instead.
+
+### Action
+Avoid naming Razor/Blazor component parameters after common BCL type names (Task, Type, Object, etc.) even when the parameter refers to a same-shaped domain entity -- prefer the domain type's own name.
+
+---
+
+## [L12] pattern — Real mouse-click dispatch via claude-in-chrome's computer...
+
+**When:** 2026-07-28 04:35 UTC
+**Category:** pattern
+**Priority:** high
+**Status:** pending
+
+### Detail
+Real mouse-click dispatch via claude-in-chrome's computer tool was wedged wholesale during verification -- even plain <a href> link clicks did nothing (no navigation, no server query in the log). This is the third occurrence of this exact failure mode noted against this project (previously logged as L7/L8 during planner-grid's verification). In-page JS dispatch (element.click() via javascript_tool) worked immediately as a substitute for every click in this session.
+
+### Action
+Recurrence >= 3 for the same failure mode across changes in this project -- consider defaulting to JS-dispatched clicks (or trying them first) for claude-in-chrome verification on this project rather than mouse-simulated clicks, to skip the diagnose-then-fallback step each time.
+
+---
+
+## [L13] agent_issue — A Visual Studio debug session (ManagerPlanner.Web.exe) wa...
+
+**When:** 2026-07-28 04:35 UTC
+**Category:** agent_issue
+**Priority:** low
+**Status:** pending
+
+### Detail
+A Visual Studio debug session (ManagerPlanner.Web.exe) was running at the start of this build, locking the Web project's build output and causing 'dotnet build' on the full solution to fail with MSB3027 file-lock errors, even though the code itself compiled cleanly (verified by building ManagerPlanner.Core alone). Resolved by asking the user for permission, then stopping the process.
+
+### Action
+Before running a full-solution 'dotnet build' during /specclaw:build, check for a running ManagerPlanner.Web.exe (or the equivalent process for other projects) that could lock output files, since this project is being actively debugged in Visual Studio during development.
+
+---
