@@ -1,3 +1,5 @@
+@inject PlanningService PlanningService
+
 <tr>
     <td>
         @WorkItem.Title
@@ -9,6 +11,12 @@
     <td>
         <div>@(WorkItem.Assignee?.FullName ?? "Unassigned")</div>
         <div style="font-size:0.85em;color:#404080;">@StatusText</div>
+        <div>
+            <button type="button" @onclick="() => SetStatusAsync(WorkItemStatus.NotStarted)">Not started</button>
+            <button type="button" @onclick="() => SetStatusAsync(WorkItemStatus.InProgress)">In progress</button>
+            <button type="button" @onclick="() => SetStatusAsync(WorkItemStatus.Blocked)">Blocked</button>
+            <button type="button" @onclick="() => SetStatusAsync(WorkItemStatus.Done)">Mark done</button>
+        </div>
     </td>
     <td>&mdash;</td>
 </tr>
@@ -16,6 +24,9 @@
 @code {
     [Parameter]
     public ManagerPlanner.Core.Domain.WorkItem WorkItem { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback StatusChanged { get; set; }
 
     private string StatusText => WorkItem.Status switch
     {
@@ -25,4 +36,11 @@
         WorkItemStatus.Done => "Done",
         _ => WorkItem.Status.ToString()
     };
+
+    private async Task SetStatusAsync(WorkItemStatus newStatus)
+    {
+        var changedById = await PlanningService.GetCurrentManagerIdAsync();
+        await PlanningService.ChangeStatusAsync(WorkItem.Id, newStatus, changedById);
+        await StatusChanged.InvokeAsync();
+    }
 }
