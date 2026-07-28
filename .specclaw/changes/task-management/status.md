@@ -42,3 +42,13 @@ fallback. Branch `specclaw/task-management` merged to `master`.
 _None blocking. See learnings L10-L13 (description-trim fidelity fix,
 Blazor `Task` parameter-naming collision, recurring wedged-click pattern,
 locked debug-session process)._
+
+## PR
+
+No separate GitHub PR — same `git.strategy: branch-per-change` constraint
+as the two prior changes: `specclaw-build finalize` had already merged
+`specclaw/task-management` into `master` locally, so `specclaw-pr` found
+head == base ("head branch \"master\" is the same as base branch
+\"master\", cannot create a pull request"). `master` was already up to
+date on `origin` (pushed automatically during the verify/build steps):
+https://github.com/PasanGunathilaka/manager-planner-mod
