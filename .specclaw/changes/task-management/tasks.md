@@ -56,8 +56,7 @@ out of scope per spec.md NFR2/AC9.
 
 - [x] `T2` — Unified add-task form, `TaskRow` component, real grid rows,
   Ungrouped section, end-to-end verification
-  - Files: `src/ManagerPlanner.Web/Components/Pages/TaskRow.razor` (new),
-    `src/ManagerPlanner.Web/Components/Pages/ProjectDetail.razor` (modify)
+  - Files: `src/ManagerPlanner.Web/Components/Pages/TaskRow.razor`, `src/ManagerPlanner.Web/Components/Pages/ProjectDetail.razor`
   - Estimate: medium-large
   - Depends: `T1`
   - Notes:
