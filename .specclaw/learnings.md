@@ -200,3 +200,48 @@ A Visual Studio debug session (ManagerPlanner.Web.exe) was running at the start 
 Before running a full-solution 'dotnet build' during /specclaw:build, check for a running ManagerPlanner.Web.exe (or the equivalent process for other projects) that could lock output files, since this project is being actively debugged in Visual Studio during development.
 
 ---
+
+## [L14] pattern — tasks.md's line-wrapping broke specclaw-parse-tasks a sec...
+
+**When:** 2026-07-28 06:04 UTC
+**Category:** pattern
+**Priority:** medium
+**Status:** pending
+
+### Detail
+tasks.md's line-wrapping broke specclaw-parse-tasks a second time (task-management's T2 hit this first, now fixed there): T2's title AND its Files: line both wrapped across two lines here, silently dropping files/depends/estimate from the parsed task until fixed. Caught before build by re-running specclaw-parse-tasks and checking the output looked complete, not by any tool warning.
+
+### Action
+When authoring tasks.md during /specclaw:plan, always keep each task's title line and Files: line as a single unwrapped line, regardless of length -- verify with specclaw-parse-tasks immediately after writing tasks.md, before starting build, and treat an empty files/depends/estimate field in the parsed output as a red flag to inspect the raw markdown.
+
+---
+
+## [L15] pattern — Real mouse-click dispatch via claude-in-chrome was wedged...
+
+**When:** 2026-07-28 06:04 UTC
+**Category:** pattern
+**Priority:** high
+**Status:** pending
+
+### Detail
+Real mouse-click dispatch via claude-in-chrome was wedged wholesale during verification for a FOURTH change running (planner-grid, project-management, task-management, now task-status-transitions) -- a real click on a status button produced zero server-side query activity, while in-page JS dispatch (element.click()) worked immediately every time.
+
+### Action
+Recurrence >= 3 was already flagged in task-management (L12); now at 4. Strongly consider defaulting straight to JS-dispatched clicks for any claude-in-chrome browser verification on this specific project/environment, skipping the real-click attempt entirely, rather than re-diagnosing the same wedge each time.
+
+---
+
+## [L16] design_gap — specclaw-build finalize failed on the first attempt: 'Fai...
+
+**When:** 2026-07-28 06:04 UTC
+**Category:** design_gap
+**Priority:** high
+**Status:** pending
+
+### Detail
+specclaw-build finalize failed on the first attempt: 'Failed to checkout master for merge... Your local changes to the following files would be overwritten... .specclaw/changes/task-status-transitions/tasks.md'. Root cause: specclaw-update-task-status mutates tasks.md's checkbox markers directly, but specclaw-build commit only stages the task's own declared source files (as passed on its command line), not tasks.md itself -- so every task's [ ] -> [x] edit is left uncommitted on the feature branch until something else happens to commit it. finalize's branch-per-change merge requires a clean working tree to check out master, so it aborted.
+
+### Action
+Before calling specclaw-build finalize, always run git status and commit any pending tasks.md/STATUS.md changes first (or fold the tasks.md checkbox update into each task's own specclaw-build commit call by passing tasks.md as an extra file). Don't assume finalize will succeed on the first try without checking working-tree cleanliness beforehand.
+
+---
