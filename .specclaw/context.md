@@ -1,6 +1,6 @@
 # Project Context
 
-_Last updated: 2026-07-28 — after "task-status-transitions"._
+_Last updated: 2026-07-28 — after "ui-modernization"._
 
 ## Architecture Overview
 
@@ -16,30 +16,47 @@ single Blazor web app:
   (+ `.Design`, dev-only), matching the legacy `ExecutivePlanning.Core.csproj`'s
   shape.
 - **`src/ManagerPlanner.Web`** (Blazor Server, unified .NET 8 "Blazor Web
-  App" template with Interactive Server render mode) — references `.Core`
-  directly. No API/DTO boundary between them (components call `PlanningService`
-  directly), per ADR-0002's flat-service-surface guidance.
+  App" template, now with **global** Interactive Server render mode — see
+  below) — references `.Core` directly. No API/DTO boundary between them
+  (components call `PlanningService` directly), per ADR-0002's
+  flat-service-surface guidance. **MudBlazor 9.7.0** is the app's
+  component/CSS framework (`ui-modernization`) — the only UI dependency,
+  registered via `builder.Services.AddMudServices()` in `Program.cs` and
+  `@using MudBlazor` in `Components/_Imports.razor`.
 
 Data flow: `Program.cs` registers `PlanningDbContext` via
-`AddDbContextFactory<T>` and `PlanningService` (Scoped), applies pending EF
-Core migrations at startup (`Database.Migrate()`), bootstraps a single
-Manager `User` if none exists, then serves Razor components. Feature pages
-so far: `/projects` (browse + create) and `/projects/{id}` (summary +
-refresh, plus a Planner Grid: add-objective form, per-objective task rows,
-and a single unified "Add task" form covering the full `WorkItem` field set
-— title, objective, assignee, deadline, description, "discovered in a
-meeting" checkbox). Tasks with no `ObjectiveId` render in a separate
-"Ungrouped" section, shown only when non-empty. Each task row is rendered
-by a shared `TaskRow.razor` component (title + deadline, assignee-or-
-"Unassigned" + status text, plus four inline status-change buttons —
-"Not started" / "In progress" / "Blocked" / "Mark done" — that call
-`PlanningService.ChangeStatusAsync` directly and notify the parent page via
-a parameterless `StatusChanged` `EventCallback`; no checklist or badges
-yet — those remain separate not-yet-built backlog items). These are the
-first four slices of the legacy app's feature surface (Project management,
-Objective grouping, Task creation/viewing, Task status transitions).
-"Switching the active project" is URL navigation between `/projects/{id}`
-rows; there is no separate "current project" session state.
+`AddDbContextFactory<T>`, `PlanningService` (Scoped), and MudBlazor's
+services (`AddMudServices()`), applies pending EF Core migrations at
+startup (`Database.Migrate()`), bootstraps a single Manager `User` if none
+exists, then serves Razor components. Feature pages so far: `/projects`
+(browse + create) and `/projects/{id}` (summary + refresh, plus a Planner
+Grid: add-objective form, per-objective task rows, and a single unified
+"Add task" form covering the full `WorkItem` field set — title, objective,
+assignee, deadline, description, "discovered in a meeting" checkbox).
+Tasks with no `ObjectiveId` render in a separate "Ungrouped" section, shown
+only when non-empty. Each task row is rendered by a shared `TaskRow.razor`
+component (title + deadline, assignee-or-"Unassigned" + a color-coded
+`MudChip` status badge, plus a `MudButtonGroup` of four inline
+status-change buttons — "Not started" / "In progress" / "Blocked" /
+"Mark done" — that call `PlanningService.ChangeStatusAsync` directly and
+notify the parent page via a parameterless `StatusChanged` `EventCallback`;
+no checklist tree yet — that remains a separate not-yet-built backlog
+item). These are the first four slices of the legacy app's feature surface
+(Project management, Objective grouping, Task creation/viewing, Task
+status transitions), now uniformly restyled on MudBlazor (`ui-modernization`,
+the fifth merged change and the first pure cross-cutting UI change rather
+than a new vertical feature slice — zero `PlanningService`/`PlanningRules`/
+entity/migration changes anywhere in it). "Switching the active project"
+is URL navigation between `/projects/{id}` rows; there is no separate
+"current project" session state.
+
+`MainLayout.razor` is now a real `MudLayout` app shell — `MudAppBar` +
+`MudDrawer`/`MudNavMenu` with `MudNavLink`s to `/` and `/projects` — plus
+the four root Mud provider components (`MudThemeProvider`,
+`MudPopoverProvider`, `MudDialogProvider`, `MudSnackbarProvider`) living
+exactly once, app-wide, in this one file. Future pages (Notes/Meetings/
+Accountability — backlog items 6/7/8, still not built) just add another
+`MudNavLink` here rather than needing shell rework.
 
 ## Coding Style & Conventions
 
@@ -73,12 +90,32 @@ rows; there is no separate "current project" session state.
   legacy `discoveredInMeetingId` parameter (nothing can supply one yet —
   `Meeting` doesn't exist). `ChangeStatusAsync`, by contrast, is a verbatim
   port with no signature deviation beyond the established
-  `IDbContextFactory` pattern.
-- Feature pages needing interactivity (button clicks, form submits) MUST
-  declare `@rendermode InteractiveServer` explicitly — the Blazor Web App
-  template's default static server rendering does not process `@onclick`
-  handlers at all; forgetting this makes a page look right but silently do
-  nothing on click.
+  `IDbContextFactory` pattern. `ui-modernization` touched zero lines of
+  this file or `Validation/` — confirmed by an empty `git diff` across the
+  whole change; it is a pure Razor/markup restyle.
+- **Render mode is now set globally, once, in `App.razor` — not per page.**
+  `<HeadOutlet @rendermode="InteractiveServer" />` and
+  `<Routes @rendermode="InteractiveServer" />` cover the whole app
+  (`ui-modernization`, needed because MudBlazor's `MudDialogProvider`/
+  `MudPopoverProvider`/`MudSnackbarProvider` require an interactive render
+  context to exist at all). **This supersedes the earlier per-page rule**
+  ("Feature pages needing interactivity MUST declare `@rendermode
+  InteractiveServer` explicitly") — the redundant per-page directives that
+  used to live on `Projects.razor`/`ProjectDetail.razor` were removed as
+  part of this change. Any *new* page added going forward does **not**
+  need its own `@rendermode` directive; it inherits interactivity from the
+  global setting.
+- **`MudSelect<T>` natively supports `@bind-Value` for nullable value types
+  (e.g. `MudSelect<int?>`)** — use it directly for nullable-int dropdowns
+  (Objective/Assignee pickers, "— Ungrouped —"/"— Unassigned —" → `null`)
+  instead of a manual `@onchange` handler that parses the selected string.
+  `task-management` originally used manual `OnObjectiveSelected`/
+  `OnAssigneeSelected` handlers as a workaround because plain HTML
+  `<select>` binding to `int?` wasn't trusted at the time; `ui-modernization`
+  replaced both with `MudSelect<int?>` and deleted the manual handlers as
+  dead code — same field semantics, same `null` mapping, fewer lines. Don't
+  reintroduce manual `@onchange` parsing for a new nullable dropdown; reach
+  for `MudSelect<T>` first.
 - **Never name a Blazor component parameter (or other identifier) `Task` in
   `ManagerPlanner.Web`** — `ImplicitUsings` is enabled, so `Task` collides
   with `System.Threading.Tasks.Task`; any async method referencing the bare
@@ -126,7 +163,10 @@ rows; there is no separate "current project" session state.
   Planning Desktop's four-button order/labels, and confirmation (read at
   both legacy call sites) that neither ever supplies a `Reason` — read the
   legacy source directly at every layer (entity, service, caller, and UI),
-  not just the layer being ported.
+  not just the layer being ported. (`ui-modernization` is the first change
+  with no legacy-fidelity dimension at all — a pure rendering restyle with
+  no legacy UI framework to port from, since the legacy app is Avalonia
+  desktop XAML, not a web component library.)
 - **Multi-collection `Include` chains need `.AsSplitQuery()` once the
   child collections are non-trivial.** Both `GetPlannerForProjectAsync`
   and `GetUngroupedTasksForProjectAsync` carry `.AsSplitQuery()` (the
@@ -157,6 +197,38 @@ rows; there is no separate "current project" session state.
   per-click status handler does this the same way `Projects.razor`'s
   `AddProjectAsync` handler already did. Expected to be replaced, not
   extended, once a real auth ADR exists (ADR-0001 defers this).
+- **Parallel-agent delegation for disjoint-file sub-tasks within one
+  wave.** When a change's tasks touch completely non-overlapping files
+  (e.g. `ui-modernization`'s Wave 2: Home/Error vs. Projects vs.
+  ProjectDetail/TaskRow), spawn the coding agents in parallel rather than
+  sequentially — no git worktree isolation is needed since nothing
+  collides, and it cuts real wall-clock time substantially (3 tasks
+  finished in roughly one sequential task's worth of wait, all first-try
+  with 0 build errors). Default to this whenever a wave's tasks are
+  file-disjoint.
+- **Verify a third-party library's exact API surface against the
+  actually-installed package before writing code against it**, rather than
+  relying on training-data recall of its API. `ui-modernization`'s largest
+  task (`ProjectDetail.razor`/`TaskRow.razor`, converting to
+  `MudSelect<int?>`/`MudDatePicker`/`MudSimpleTable`/`MudChip`/
+  `MudButtonGroup`) had its coding agent write a small throwaway reflection
+  console app against the installed `MudBlazor.dll` (9.7.0) to confirm
+  exact property names (`MudDatePicker.Date`, `MudSimpleTable.Hover`/
+  `Dense`, `MudChip<T>.Color`, etc.) first — result: zero MudBlazor
+  API-mismatch compile errors on the first build attempt for the most
+  complex file in the change. Use this whenever precision against an
+  unfamiliar third-party API matters more than speed.
+- **Commit `tasks.md`/`STATUS.md` immediately before `specclaw-build
+  finalize`, every time — this is now a settled, working habit, not a
+  live risk.** `finalize` requires a clean working tree to check out
+  `master` for the branch-per-change merge; `specclaw-update-task-status`
+  mutates `tasks.md`'s checkboxes without committing them, which blocked
+  `finalize` once (`task-status-transitions`, L16). Running `git status`
+  and committing any pending `tasks.md`/`STATUS.md` changes right before
+  calling `finalize` has now made the merge succeed on the first attempt
+  twice running (`task-status-transitions`, `ui-modernization`) — keep
+  doing it as routine, not as a fix applied only when something looks
+  wrong.
 - **Testing Blazor Server pages via claude-in-chrome:** use the `form_input`
   tool for text fields, never `computer.type` (simulated keystrokes raced
   against the SignalR round-trip and corrupted values during
@@ -165,16 +237,16 @@ rows; there is no separate "current project" session state.
   Blazor's async re-renders, and a stale-ref click can make a genuinely
   working feature look broken. If a click seems to do nothing, diff
   server-log query counts before/after before concluding the feature is
-  broken. If clicks fail *wholesale* (even plain `<a href>` links do
-  nothing, on a fresh tab too) — a wedged Chrome renderer, not an app bug —
-  dispatch via in-page JavaScript (`element.click()`) first; this has now
-  been the working fallback **four** changes running (`planner-grid`,
-  `project-management`, `task-management`, `task-status-transitions`), each
-  time paired with a scratch console app querying the live SQLite file
-  directly to confirm persisted state when browser evidence alone was in
-  doubt. This is now frequent enough that it's worth defaulting straight to
-  JS-dispatched clicks for any claude-in-chrome verification on this
-  project, rather than re-diagnosing the same wedge every time.
+  broken. **Default straight to JS-dispatched clicks (`element.click()`
+  via `javascript_tool`), skipping the real-click attempt entirely** —
+  real mouse-click dispatch via claude-in-chrome has now wedged in every
+  one of the last five changes' verification sessions (`planner-grid`,
+  `project-management`, `task-management`, `task-status-transitions`,
+  `ui-modernization`), each time recovered immediately by JS dispatch, so
+  this is the established default for this project, not a fallback to
+  diagnose into. Pair it with a scratch console app (or direct DB
+  inspection) querying the live SQLite file when persisted-state evidence
+  from the browser alone is in doubt.
 - **`tasks.md` line-wrapping silently breaks `specclaw-parse-tasks`** — hit
   twice now (`task-management`'s T2, then `task-status-transitions`'s T2
   again). If a task's title line or `Files:` line wraps across two lines
@@ -186,16 +258,6 @@ rows; there is no separate "current project" session state.
   `specclaw-parse-tasks` immediately after writing it — treat any
   unexpectedly empty files/depends/estimate field in its output as a red
   flag to go inspect the raw markdown, not a fluke.
-- **`specclaw-build finalize` requires a clean working tree before it can
-  check out `master` for the branch-per-change merge.** `specclaw-update-
-  task-status` mutates `tasks.md`'s `[ ]`→`[x]` checkboxes directly, but
-  neither that command nor `specclaw-build commit` (which only stages a
-  task's own declared files) commits that change — so it's routinely left
-  uncommitted on the feature branch. `finalize` then fails with "Your local
-  changes... would be overwritten." Always run `git status` and commit any
-  pending `tasks.md`/`STATUS.md` changes immediately before calling
-  `specclaw-build finalize`, every time, not just when something looks
-  wrong (first hit in `task-status-transitions`).
 - **No client-local-time concept exists anywhere in this app yet.**
   Deadlines render as UTC `yyyy-MM-dd` (`TaskRow.razor`), not the legacy
   desktop app's local-time `MMM dd` format, and overdue checks already
@@ -215,9 +277,24 @@ rows; there is no separate "current project" session state.
   legacy `PlanningDbContextFactory.Create`'s `EnsureCreated()` (ADR-0003).
   One migration exists so far: `InitialCreate`. `task-status-transitions`
   needed no new migration — `StatusChange` and `WorkItem.CompletedUtc`
-  already existed in that schema.
+  already existed in that schema. `ui-modernization` needed no migration
+  either — it touches only `.Web`, never `.Core`.
 - **.NET 8** — matches the legacy solution's target framework exactly, to
   avoid a version gap ahead of future fidelity comparisons.
+- **MudBlazor 9.7.0** as the component/CSS framework (`ui-modernization`)
+  — a single NuGet package, no npm/JS build step, first-class Blazor
+  Server support on .NET 8, and no CSS/component framework existed at all
+  before this change (not even Bootstrap). Chosen over building custom CSS
+  because it ships complete form controls (`MudSelect`, `MudDatePicker`),
+  layout primitives (`MudLayout`/`MudAppBar`/`MudDrawer`), and dialog/
+  snackbar/popover infrastructure the not-yet-built Notes/Meetings/
+  Accountability pages will need. Its bundled CSS/JS
+  (`_content/MudBlazor/MudBlazor.min.css`/`.min.js`) is the only new
+  asset — no external CDN reference (e.g. Google Fonts) was added,
+  preserving the project's local-first character (matches the SQLite-only
+  backend's no-external-network-dependency pattern). Version left
+  unpinned in the design step by choice but resolved to `9.7.0` at
+  restore time and is now pinned in `ManagerPlanner.Web.csproj`.
 
 ## Constraints
 
@@ -225,7 +302,10 @@ rows; there is no separate "current project" session state.
   scaffold is deliberately infrastructure-only (ADR-0002's sequencing
   intent: "item 0 (scaffold)... before item 1 stays a pure feature
   change"). Business logic arrives with its owning backlog item, not ad
-  hoc.
+  hoc. `ui-modernization` reaffirmed the UI half of this too: it
+  deliberately did not build any Notes/Meetings/Accountability UI ahead of
+  their owning backlog items even though a shell nav item would have been
+  easy to add — restyle only what's built.
 - **Don't silently "fix" the accountability verdict precedence** or other
   quirks the analysis docs flag as intentional-looking legacy behavior
   (e.g. the `IsOverdue`-checked-before-promise-pending order in
@@ -246,7 +326,10 @@ rows; there is no separate "current project" session state.
   `Reason`, and neither shows a confirmation before a status change
   (unlike task/project deletion, items 9/10). `StatusChange.Reason` stays
   in the schema, unset, until a future item deliberately decides to expose
-  it.
+  it. (`MudDialog`/`IDialogService` is the intended mechanism once
+  deletion — items 9/10 — actually ships a confirmation dialog;
+  `ui-modernization` established the provider is wired but didn't use it
+  for anything yet.)
 - **Don't add per-status button disabling to `TaskRow`'s status controls.**
   All four buttons (Not started/In progress/Blocked/Mark done) stay
   visible and clickable regardless of the row's current status, matching
@@ -254,17 +337,45 @@ rows; there is no separate "current project" session state.
   redundant same-status click harmless, not UI-level prevention. Adding
   `disabled` logic would be an unrequested deviation from the ported
   behavior.
+- **Keep `MudSimpleTable`, not a full `MudTable` rewrite, for the Planner
+  Grid** unless a concrete future need for `MudTable`'s templated/
+  data-bound features (built-in sorting, filtering, paging) actually
+  arises. `ui-modernization` deliberately wrapped the *existing*
+  `<thead>`/`<tbody>`/`<TaskRow>` markup in `MudSimpleTable` (a
+  styling-only wrapper) rather than restructuring `TaskRow`'s
+  embedded-status-buttons-per-row pattern into `MudTable`'s API — a
+  full `MudTable` rewrite would be a real, higher-risk restructuring, not
+  a drop-in upgrade.
 - **`git.strategy: branch-per-change`'s `finalize` step auto-merges the
   feature branch into `master` locally** — it does not leave the branch
   open for a separate GitHub PR. If a real reviewable PR is wanted for a
   future change, that needs deciding *before* running `/specclaw:build`
   (or accept that `/specclaw:pr` will find head==base and a straight
-  `git push` is the only option left). Confirmed a fourth time on
-  `task-status-transitions`.
+  `git push` is the only option left). Confirmed a fifth time on
+  `ui-modernization`.
 
 ## Recent Decisions
 
-1. **All four `WorkItemStatus` values are exposed as buttons on every
+1. **Global `@rendermode="InteractiveServer"` on `App.razor`'s
+   `<HeadOutlet>`/`<Routes>` replaces per-page render-mode directives
+   app-wide** — required for MudBlazor's `MudDialogProvider`/
+   `MudPopoverProvider`/`MudSnackbarProvider` to function; every page
+   already opted into `InteractiveServer` individually before this, so
+   nothing functional changed, but it removes the "forgetting the per-page
+   directive silently breaks clicks" footgun for every future page
+   (ui-modernization, 2026-07-28).
+2. **`MudSelect<int?>`'s native `@bind-Value` replaces the manual
+   `OnObjectiveSelected`/`OnAssigneeSelected` `@onchange` handlers**
+   `task-management` had used as a workaround for untrusted nullable
+   `<select>` binding — same fields, same `null`-mapping semantics, dead
+   handler code deleted (ui-modernization, 2026-07-28).
+3. **`MudSimpleTable` wraps the existing Planner Grid table markup
+   as-is, rather than a full `MudTable` rewrite** — resolves the
+   proposal's table-strategy open question in favor of the lower-risk
+   option, since `TaskRow`'s per-row status buttons would need real
+   re-templating work to fit `MudTable`'s data-bound API
+   (ui-modernization, 2026-07-28).
+4. **All four `WorkItemStatus` values are exposed as buttons on every
    `TaskRow`** ("Not started"/"In progress"/"Blocked"/"Mark done", matching
    Executive Planning Desktop's order/labels), resolving the proposal's
    open question against Manager Planner Desktop's Done-only shortcut —
@@ -272,24 +383,8 @@ rows; there is no separate "current project" session state.
    Done-only surface would make `Blocked`/`InProgress` permanently
    unreachable through any UI in the rebuild (task-status-transitions,
    2026-07-28).
-2. **No `Reason` input and no confirmation dialog for status changes** —
+5. **No `Reason` input and no confirmation dialog for status changes** —
    confirmed by reading both legacy call sites directly; neither ever
    supplies a `Reason` or shows a confirmation before a status change
    (unlike deletion). `StatusChange.Reason` stays in the schema, unset,
    pending a future item (task-status-transitions, 2026-07-28).
-3. **`TaskRow`'s `StatusChanged` `EventCallback` wires to `ProjectDetail`'s
-   existing full `RefreshAsync`, not a new lighter refresh method** — a
-   status change can move a task in/out of `Done` and `Overdue`, both
-   tracked by the page's summary counts, so reusing the full refresh keeps
-   those counts correct immediately rather than shipping a feature that
-   makes its own summary visibly stale (task-status-transitions,
-   2026-07-28).
-4. **`AddTaskAsync` drops the legacy `discoveredInMeetingId` parameter
-   entirely, rather than porting it and always passing `null`** — nothing
-   in this item's UI can supply a meeting id (no `Meeting` entity/UI
-   exists yet); a future item can add it back once meeting discovery is
-   actually wired (task-management, 2026-07-28).
-5. **A unified "Add task" form (all `WorkItem` fields, one instance per
-   project) replaces Manager Planner Desktop's per-objective coarse
-   inline fast-add entirely** — not preserved as a second path
-   (task-management, 2026-07-28).
