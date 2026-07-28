@@ -17,7 +17,7 @@ spec.md NFR2/AC7/AC9.
 
 ### Wave 1 — Core business logic
 
-- [ ] `T1` — Add `ChangeStatusAsync` to `PlanningService`
+- [x] `T1` — Add `ChangeStatusAsync` to `PlanningService`
   - Files: `src/ManagerPlanner.Core/Services/PlanningService.cs`
   - Estimate: small
   - Depends: none
@@ -41,7 +41,7 @@ spec.md NFR2/AC7/AC9.
 
 ### Wave 2 — Page + verification
 
-- [ ] `T2` — Four status buttons on `TaskRow`, wired to refresh `ProjectDetail`, end-to-end verification
+- [x] `T2` — Four status buttons on `TaskRow`, wired to refresh `ProjectDetail`, end-to-end verification
   - Files: `src/ManagerPlanner.Web/Components/Pages/TaskRow.razor`, `src/ManagerPlanner.Web/Components/Pages/ProjectDetail.razor`
   - Estimate: medium
   - Depends: `T1`
