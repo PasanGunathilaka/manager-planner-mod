@@ -18,7 +18,7 @@ stay out of scope per spec.md NFR1/NFR4/AC10/AC11.
 
 ### Wave 1 — Setup
 
-- [ ] `T1` — MudBlazor package, service registration, app shell, README
+- [x] `T1` — MudBlazor package, service registration, app shell, README
   - Files: `src/ManagerPlanner.Web/ManagerPlanner.Web.csproj`, `src/ManagerPlanner.Web/Program.cs`, `src/ManagerPlanner.Web/Components/_Imports.razor`, `src/ManagerPlanner.Web/Components/App.razor`, `src/ManagerPlanner.Web/Components/Layout/MainLayout.razor`, `README.md`
   - Estimate: medium
   - Depends: none
@@ -26,19 +26,19 @@ stay out of scope per spec.md NFR1/NFR4/AC10/AC11.
 
 ### Wave 2 — Screen restyles
 
-- [ ] `T2` — Restyle Home.razor and Error.razor
+- [x] `T2` — Restyle Home.razor and Error.razor
   - Files: `src/ManagerPlanner.Web/Components/Pages/Home.razor`, `src/ManagerPlanner.Web/Components/Pages/Error.razor`
   - Estimate: small
   - Depends: `T1`
   - Notes: `Home.razor` — replace the three plain `<p>` states with `<MudAlert Severity="Severity.Info">`/`<MudAlert Severity="Severity.Success">`/`<MudAlert Severity="Severity.Error">` matching the existing `_canConnect is null` / `== true` / else conditions exactly — don't touch `OnInitializedAsync` or the `DbFactory`/`CanConnectAsync` call. `Error.razor` — replace `<h1 class="text-danger">Error.</h1>`/`<h2 class="text-danger">...</h2>` with a `MudAlert Severity="Severity.Error"` carrying the same text, and restyle the Request ID / Development-mode paragraphs with `MudText` — keep the `[CascadingParameter] HttpContext`/`RequestId`/`ShowRequestId` code exactly as-is. Verify: both pages render the correct state/content with no console errors (AC4 for Home; visual-only check for Error, no AC number of its own since it wasn't in the original screen list but is grounded in design.md Key Decision 7).
 
-- [ ] `T3` — Restyle Projects.razor
+- [x] `T3` — Restyle Projects.razor
   - Files: `src/ManagerPlanner.Web/Components/Pages/Projects.razor`
   - Estimate: medium
   - Depends: `T1`
   - Notes: Remove the now-redundant `@rendermode InteractiveServer` line (global rendering is set in `App.razor` by `T1`). Replace the `<ul><li><a href=...>` project list with a `MudList`/`MudListItem` per project — each item's `Href` set to `/projects/{id}`, same Name/Description text, same "No projects yet." empty state and "Loading projects…" loading state (as `MudAlert`s or `MudText`, matching the existing `_projects is null`/`.Count == 0` conditions exactly). Keep `<EditForm Model="this" OnValidSubmit="AddProjectAsync">` as-is; swap `<InputText @bind-Value="_newName" />`/`<InputText @bind-Value="_newDescription" />` for `<MudTextField @bind-Value="_newName" Label="Name" />`/`<MudTextField @bind-Value="_newDescription" Label="Description" />`, and `<button type="submit">Add project</button>` for `<MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Add project</MudButton>`. The existing inline `<p style="color: red;">@_errorMessage</p>` becomes a `MudAlert Severity="Severity.Error"` shown under the same `!string.IsNullOrEmpty(_errorMessage)` condition. Do not touch `AddProjectAsync`'s body or the `ValidationException` catch. Verify: submitting a valid name still creates a project and clears the form (re-confirms `project-management` AC2); submitting an empty/overlong name still shows `PlanningRules.ValidateProjectName`'s exact message and creates no row (re-confirms AC3) — spec.md AC5.
 
-- [ ] `T4` — Restyle ProjectDetail.razor and TaskRow.razor
+- [x] `T4` — Restyle ProjectDetail.razor and TaskRow.razor
   - Files: `src/ManagerPlanner.Web/Components/Pages/ProjectDetail.razor`, `src/ManagerPlanner.Web/Components/Pages/TaskRow.razor`
   - Estimate: large
   - Depends: `T1`
@@ -52,7 +52,7 @@ stay out of scope per spec.md NFR1/NFR4/AC10/AC11.
 
 ### Wave 3 — Final re-verification
 
-- [ ] `T5` — Full functional re-verification across all restyled screens
+- [x] `T5` — Full functional re-verification across all restyled screens
   - Files: none (verification only — no source changes)
   - Estimate: medium
   - Depends: `T2`, `T3`, `T4`
