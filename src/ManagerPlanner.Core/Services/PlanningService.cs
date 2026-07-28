@@ -103,6 +103,52 @@ public class PlanningService
             .Include(o => o.Tasks).ThenInclude(t => t.Assignee)
             .Include(o => o.Tasks).ThenInclude(t => t.Owners).ThenInclude(w => w.User)
             .Include(o => o.Tasks).ThenInclude(t => t.Checklist)
+            .AsSplitQuery()
+            .ToListAsync();
+    }
+
+    public async Task<WorkItem> AddTaskAsync(int projectId, string title, string? description,
+        int? assigneeId, DateTime? deadline, bool isDiscovered = false, int? objectiveId = null)
+    {
+        PlanningRules.ValidateTaskTitle(title);
+
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var task = new WorkItem
+        {
+            ProjectId = projectId,
+            ObjectiveId = objectiveId,
+            Title = title.Trim(),
+            Description = description,
+            AssigneeId = assigneeId,
+            Deadline = deadline,
+            IsDiscovered = isDiscovered
+        };
+        db.WorkItems.Add(task);
+        await db.SaveChangesAsync();
+        return task;
+    }
+
+    public async Task<List<User>> GetTeamMembersAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Users
+            .Where(u => u.Role == UserRole.TeamMember && u.IsActive)
+            .OrderBy(u => u.FullName)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Tasks with no objective — new, no legacy equivalent. Manager Planner Desktop's legacy grid
+    /// never rendered this case (its only add-task path always supplied an objective).
+    /// </summary>
+    public async Task<List<WorkItem>> GetUngroupedTasksForProjectAsync(int projectId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.WorkItems
+            .Where(t => t.ProjectId == projectId && t.ObjectiveId == null)
+            .Include(t => t.Assignee)
+            .Include(t => t.Owners).ThenInclude(o => o.User)
+            .Include(t => t.Checklist)
             .ToListAsync();
     }
 }
