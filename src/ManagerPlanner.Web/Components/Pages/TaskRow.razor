@@ -1,0 +1,28 @@
+<tr>
+    <td>
+        @WorkItem.Title
+        @if (WorkItem.Deadline.HasValue)
+        {
+            <div style="font-size:0.85em;color:#606060;">@WorkItem.Deadline.Value.ToString("yyyy-MM-dd")</div>
+        }
+    </td>
+    <td>
+        <div>@(WorkItem.Assignee?.FullName ?? "Unassigned")</div>
+        <div style="font-size:0.85em;color:#404080;">@StatusText</div>
+    </td>
+    <td>&mdash;</td>
+</tr>
+
+@code {
+    [Parameter]
+    public ManagerPlanner.Core.Domain.WorkItem WorkItem { get; set; } = null!;
+
+    private string StatusText => WorkItem.Status switch
+    {
+        WorkItemStatus.NotStarted => "Not started",
+        WorkItemStatus.InProgress => "In progress",
+        WorkItemStatus.Blocked => "Blocked",
+        WorkItemStatus.Done => "Done",
+        _ => WorkItem.Status.ToString()
+    };
+}

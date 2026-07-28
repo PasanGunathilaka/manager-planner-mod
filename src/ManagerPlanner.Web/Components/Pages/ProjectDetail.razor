@@ -45,6 +45,65 @@ else
         <button type="submit">Add</button>
     </EditForm>
 
+    <h3>Add task</h3>
+
+    @if (!string.IsNullOrEmpty(_taskErrorMessage))
+    {
+        <p style="color: red;">@_taskErrorMessage</p>
+    }
+
+    <EditForm Model="this" OnValidSubmit="AddTaskAsync">
+        <div>
+            <label>
+                Title:
+                <InputText @bind-Value="_newTaskTitle" />
+            </label>
+        </div>
+        <div>
+            <label>
+                Objective:
+                <select value="@_newTaskObjectiveId" @onchange="OnObjectiveSelected">
+                    <option value="">&mdash; Ungrouped &mdash;</option>
+                    @foreach (var objective in _objectives ?? new List<Objective>())
+                    {
+                        <option value="@objective.Id">@objective.Title</option>
+                    }
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>
+                Assignee:
+                <select value="@_newTaskAssigneeId" @onchange="OnAssigneeSelected">
+                    <option value="">&mdash; Unassigned &mdash;</option>
+                    @foreach (var member in _teamMembers ?? new List<User>())
+                    {
+                        <option value="@member.Id">@member.FullName</option>
+                    }
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>
+                Deadline:
+                <InputDate @bind-Value="_newTaskDeadline" />
+            </label>
+        </div>
+        <div>
+            <label>
+                Description:
+                <InputTextArea @bind-Value="_newTaskDescription" />
+            </label>
+        </div>
+        <div>
+            <label>
+                <InputCheckbox @bind-Value="_newTaskIsDiscovered" />
+                Discovered in a meeting
+            </label>
+        </div>
+        <button type="submit">Add task</button>
+    </EditForm>
+
     <table>
         <thead>
             <tr>
@@ -68,8 +127,35 @@ else
         @foreach (var objective in _objectives)
         {
             <h3>@objective.Title</h3>
-            <p>No tasks yet.</p>
+            @if (objective.Tasks.Count == 0)
+            {
+                <p>No tasks yet.</p>
+            }
+            else
+            {
+                <table>
+                    <tbody>
+                        @foreach (var task in objective.Tasks)
+                        {
+                            <TaskRow WorkItem="task" />
+                        }
+                    </tbody>
+                </table>
+            }
         }
+    }
+
+    @if (_ungroupedTasks is { Count: > 0 })
+    {
+        <h3>Ungrouped</h3>
+        <table>
+            <tbody>
+                @foreach (var task in _ungroupedTasks)
+                {
+                    <TaskRow WorkItem="task" />
+                }
+            </tbody>
+        </table>
     }
 }
 
@@ -79,19 +165,33 @@ else
 
     private ProjectSummary? _summary;
     private List<Objective>? _objectives;
+    private List<User>? _teamMembers;
+    private List<WorkItem>? _ungroupedTasks;
     private string _newObjectiveTitle = string.Empty;
     private string? _objectiveErrorMessage;
+
+    private string _newTaskTitle = string.Empty;
+    private int? _newTaskObjectiveId;
+    private int? _newTaskAssigneeId;
+    private DateTime? _newTaskDeadline;
+    private string? _newTaskDescription;
+    private bool _newTaskIsDiscovered;
+    private string? _taskErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
         _summary = await PlanningService.GetProjectSummaryAsync(Id);
         _objectives = await PlanningService.GetPlannerForProjectAsync(Id);
+        _teamMembers = await PlanningService.GetTeamMembersAsync();
+        _ungroupedTasks = await PlanningService.GetUngroupedTasksForProjectAsync(Id);
     }
 
     private async Task RefreshAsync()
     {
         _summary = await PlanningService.GetProjectSummaryAsync(Id);
         _objectives = await PlanningService.GetPlannerForProjectAsync(Id);
+        _teamMembers = await PlanningService.GetTeamMembersAsync();
+        _ungroupedTasks = await PlanningService.GetUngroupedTasksForProjectAsync(Id);
     }
 
     private async Task AddObjectiveAsync()
@@ -107,6 +207,54 @@ else
         catch (ManagerPlanner.Core.Validation.ValidationException ex)
         {
             _objectiveErrorMessage = ex.Message;
+        }
+    }
+
+    private void OnObjectiveSelected(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        _newTaskObjectiveId = string.IsNullOrEmpty(value) ? null : int.Parse(value);
+    }
+
+    private void OnAssigneeSelected(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        _newTaskAssigneeId = string.IsNullOrEmpty(value) ? null : int.Parse(value);
+    }
+
+    private async Task AddTaskAsync()
+    {
+        try
+        {
+            // Matches the legacy MainWindowViewModel.AddTaskAsync's pre-processing exactly:
+            // description is trimmed/nulled by the caller, not by the service.
+            var description = string.IsNullOrWhiteSpace(_newTaskDescription)
+                ? null
+                : _newTaskDescription.Trim();
+
+            await PlanningService.AddTaskAsync(
+                Id,
+                _newTaskTitle,
+                description,
+                _newTaskAssigneeId,
+                _newTaskDeadline,
+                _newTaskIsDiscovered,
+                _newTaskObjectiveId);
+
+            _newTaskTitle = string.Empty;
+            _newTaskObjectiveId = null;
+            _newTaskAssigneeId = null;
+            _newTaskDeadline = null;
+            _newTaskDescription = null;
+            _newTaskIsDiscovered = false;
+            _taskErrorMessage = null;
+
+            _objectives = await PlanningService.GetPlannerForProjectAsync(Id);
+            _ungroupedTasks = await PlanningService.GetUngroupedTasksForProjectAsync(Id);
+        }
+        catch (ManagerPlanner.Core.Validation.ValidationException ex)
+        {
+            _taskErrorMessage = ex.Message;
         }
     }
 }
