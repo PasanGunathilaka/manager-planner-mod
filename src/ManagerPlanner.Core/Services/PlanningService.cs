@@ -149,6 +149,7 @@ public class PlanningService
             .Include(t => t.Assignee)
             .Include(t => t.Owners).ThenInclude(o => o.User)
             .Include(t => t.Checklist)
+            .AsSplitQuery()
             .ToListAsync();
     }
 }
