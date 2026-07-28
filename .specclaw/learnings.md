@@ -245,3 +245,63 @@ specclaw-build finalize failed on the first attempt: 'Failed to checkout master 
 Before calling specclaw-build finalize, always run git status and commit any pending tasks.md/STATUS.md changes first (or fold the tasks.md checkbox update into each task's own specclaw-build commit call by passing tasks.md as an extra file). Don't assume finalize will succeed on the first try without checking working-tree cleanliness beforehand.
 
 ---
+
+## [L17] best_practice — Spawned 3 independent coding agents in parallel for Wave ...
+
+**When:** 2026-07-28 07:24 UTC
+**Category:** best_practice
+**Priority:** medium
+**Status:** pending
+
+### Detail
+Spawned 3 independent coding agents in parallel for Wave 2 (T2: Home/Error, T3: Projects, T4: ProjectDetail/TaskRow) since they touched completely disjoint files with no worktree isolation needed. All three succeeded first-try with 0 build errors, including T4 which was the largest/most complex task in this change (MudSelect<int?> binding conversion, MudSimpleTable wrapping, MudDatePicker, MudButtonGroup).
+
+### Action
+For a multi-file restyle/refactor change where sub-tasks touch disjoint files, default to spawning them in parallel within a wave rather than sequentially -- git working-tree isolation isn't needed when files don't overlap, and it cuts wall-clock time significantly (3 tasks in ~1 sequential-task's worth of wait).
+
+---
+
+## [L18] best_practice — specclaw-build finalize succeeded on the FIRST attempt th...
+
+**When:** 2026-07-28 07:24 UTC
+**Category:** best_practice
+**Priority:** medium
+**Status:** pending
+
+### Detail
+specclaw-build finalize succeeded on the FIRST attempt this time, unlike task-status-transitions where it failed on uncommitted tasks.md checkboxes (L16). This time git status was checked and tasks.md/STATUS.md were committed proactively before calling finalize, exactly as L16 recommended.
+
+### Action
+The L16 mitigation (always git status + commit tasks.md/STATUS.md immediately before specclaw-build finalize) works -- keep doing this every time, it turned a previously-reliable failure point into a non-issue.
+
+---
+
+## [L19] best_practice — During T5's final re-verification, skipped the real-mouse...
+
+**When:** 2026-07-28 07:24 UTC
+**Category:** best_practice
+**Priority:** low
+**Status:** pending
+
+### Detail
+During T5's final re-verification, skipped the real-mouse-click attempt entirely and went straight to JS dispatch (element.click()) for every interaction, per L15's recommendation after 4 prior changes hit the same wedged-renderer issue. This saved the diagnose-then-fallback round trip and worked flawlessly for every form submission and status-button click tested.
+
+### Action
+Continue defaulting straight to JS-dispatched clicks for claude-in-chrome verification on this project -- L15's recommendation is confirmed sound, no need to re-attempt real clicks first each time.
+
+---
+
+## [L20] best_practice — T4's coding agent (the largest task: ProjectDetail.razor ...
+
+**When:** 2026-07-28 07:24 UTC
+**Category:** best_practice
+**Priority:** medium
+**Status:** pending
+
+### Detail
+T4's coding agent (the largest task: ProjectDetail.razor + TaskRow.razor, converting to MudSelect<int?>/MudDatePicker/MudSimpleTable/MudChip/MudButtonGroup) wrote a small throwaway reflection console app against the actual installed MudBlazor.dll (9.7.0) to confirm exact property names (MudDatePicker.Date, MudSimpleTable.Hover/Dense, MudChip<T>.Color, etc.) before writing any markup, instead of guessing from training-data API knowledge. Result: zero MudBlazor API-mismatch compile errors on the first build attempt for the most complex file in the change.
+
+### Action
+When a coding agent (or Claude directly) is about to write markup/code against a third-party library API it isn't 100% certain of, encourage verifying exact member names against the actually-installed package (via reflection, decompilation, or reading the package's own source/docs) before writing code, rather than writing-then-fixing compile errors reactively -- this is cheap insurance that fully paid off here.
+
+---
