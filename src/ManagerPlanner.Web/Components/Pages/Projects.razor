@@ -1,5 +1,4 @@
 @page "/projects"
-@rendermode InteractiveServer
 @inject PlanningService PlanningService
 
 <PageTitle>Projects</PageTitle>
@@ -8,49 +7,49 @@
 
 @if (_projects is null)
 {
-    <p>Loading projects&hellip;</p>
+    <MudAlert Severity="Severity.Info">Loading projects&hellip;</MudAlert>
 }
 else if (_projects.Count == 0)
 {
-    <p>No projects yet.</p>
+    <MudAlert Severity="Severity.Info">No projects yet.</MudAlert>
 }
 else
 {
-    <ul>
+    <MudList T="int">
         @foreach (var project in _projects)
         {
-            <li>
-                <a href="@($"/projects/{project.Id}")">@project.Name</a>
+            <MudListItem T="int" Href="@($"/projects/{project.Id}")">
+                @project.Name
                 @if (!string.IsNullOrWhiteSpace(project.Description))
                 {
                     <text> &mdash; @project.Description</text>
                 }
-            </li>
+            </MudListItem>
         }
-    </ul>
+    </MudList>
 }
 
 <h2>Add project</h2>
 
 @if (!string.IsNullOrEmpty(_errorMessage))
 {
-    <p style="color: red;">@_errorMessage</p>
+    <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
 }
 
 <EditForm Model="this" OnValidSubmit="AddProjectAsync">
     <div>
         <label>
             Name:
-            <InputText @bind-Value="_newName" />
+            <MudTextField @bind-Value="_newName" Label="Name" />
         </label>
     </div>
     <div>
         <label>
             Description:
-            <InputText @bind-Value="_newDescription" />
+            <MudTextField @bind-Value="_newDescription" Label="Description" />
         </label>
     </div>
-    <button type="submit">Add project</button>
+    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Add project</MudButton>
 </EditForm>
 
 @code {
