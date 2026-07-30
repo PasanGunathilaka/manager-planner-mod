@@ -1,0 +1,428 @@
+# Clarifications: manager-planner-mod
+
+**Date generated:** 2026-07-30
+**Documents swept:** codebase-report.md,architecture.md,domain-model.md,functional-spec.md,rebuild-backlog.md
+
+<!--
+  This file is drafted by /specclaw:clarify (extract mode) and re-rendered
+  on every subsequent run — never freehand-edited except for the fields a
+  human fills in below each question.
+
+  Per-question block format — every question follows this exact structure:
+
+  ### CQ-NNN — <short title>
+
+  - **Type:** DECISION | DATA | SCOPE | DEFECT | MECHANICAL | TARGET-GAP | CONFLICT
+  - **Blocking:** yes — <what it blocks> | no
+  - **Source:** <doc § section, and/or file:line>
+  - **Finding:** <what was found and why it's uncertain>
+  - **Why it matters:** <consequence of leaving this unresolved>
+  - **Options:**
+    1. <option>
+    2. <option>
+  - **Proposed default:** <an option number, or "adopt as-is">
+  - **Answer:**
+  - **Decided by:**
+  - **Date:**
+
+  Display ordering on every (re-)render: blocking questions first, then
+  grouped by Type in this fixed order — DECISION, DATA, SCOPE, DEFECT,
+  MECHANICAL, TARGET-GAP, CONFLICT. CQ-NNN IDs are permanent identifiers,
+  not position — a re-run may move a block to a different place on the
+  page but must never change its ID, and must never touch an
+  Answer/Decided by/Date field a human has already filled in.
+
+  To answer a question: type your answer directly after "**Answer:**" (one
+  line, or several up to the next "**Decided by:**" line), fill in
+  "**Decided by:**" (your name) and "**Date:**" (YYYY-MM-DD). Then run
+  `/specclaw:clarify --resolve` to promote it into decisions.md.
+-->
+
+## Summary
+
+**Total questions:** 25
+**Blocking:** 9
+**Unanswered:** 25
+**By type:** DECISION: 9, DATA: 6, SCOPE: 6, DEFECT: 2, MECHANICAL: 2, TARGET-GAP: 0, CONFLICT: 0
+
+## Questions
+
+### CQ-001 — Canonical front-end: ExecutivePlanning.Desktop vs. ManagerPlanner.Desktop
+
+- **Type:** DECISION
+- **Blocking:** yes — blocks overall rebuild scope (determines which desktop app's feature set becomes the baseline for the rebuild, especially backlog item 6 "Meeting recording" and item 12 "Multi-window MDI chrome")
+- **Source:** codebase-report.md Risks/Tech-Debt ("Two near-duplicate front ends over the same Core... it is undocumented whether ExecutivePlanning.Desktop is still meant to be maintained or is legacy code being kept temporarily") and Suggested First Changes ("clarify (this is undocumented) whether ExecutivePlanning.Desktop is still a live target — the five most recent commits... and the publish/ scripts all target ManagerPlanner.Desktop only")
+- **Finding:** Two independent, near-duplicate Avalonia front ends remain in the solution today: ExecutivePlanning.Desktop (tabbed UI, README calls it "the original") and ManagerPlanner.Desktop (Win95-style MDI shell, README calls it "newer"), both calling the same PlanningService. Recent commits and the publish/ scripts target only ManagerPlanner.Desktop, but nothing states ExecutivePlanning.Desktop is deprecated, and the two apps have diverged in feature coverage (see CQ-008, CQ-009, CQ-010).
+- **Why it matters:** The rebuild backlog assumes one merged feature set, but the two legacy apps don't agree on what that set is. Without a canonical baseline, every downstream item that differs between the two apps has to be re-litigated individually instead of resolved once.
+- **Options:**
+  1. ManagerPlanner.Desktop (MDI shell) is canonical — it's the actively maintained/published app per the last five commits and publish/ scripts.
+  2. ExecutivePlanning.Desktop (tabbed UI) is canonical — it's the more feature-complete app (has Meeting recording, all four status buttons, full task-add form).
+  3. Merge both feature sets into one new UI, dropping neither app's capabilities.
+- **Proposed default:** 1
+- **Answer:** Option 3 Merge both legacy feature sets into one modern rebuilt UI. ManagerPlanner.Desktop is treated as the newer operational reference, but useful capabilities that exist only in ExecutivePlanning.Desktop, such as meeting recording and full status management, must not be silently dropped.
+- **Decided by:** Pasan Gunathilaka
+- **Date:** 2026/07/30
+
+### CQ-002 — Schema-evolution / migrations strategy for the rebuild
+
+- **Type:** DECISION
+- **Blocking:** yes — blocks backlog item 1 (Project management) and every subsequent persisted-entity item
+- **Source:** codebase-report.md Risks/Tech-Debt ("No EF Core migrations exist anywhere in the repo... PlanningDbContextFactory.Create only calls ctx.Database.EnsureCreated()... the codebase's own documented workaround for schema evolution... is to fork a brand-new database file per app version rather than migrate in place") and rebuild-backlog.md item 1 Verification inputs needed ("a human must decide the rebuild's schema-evolution strategy — the source has no migration path to observe as a reference")
+- **Finding:** The legacy app has no EF Core migrations at all; its only schema-evolution mechanism, stated directly in ManagerPlanner.Desktop/App.axaml.cs, is to give each incompatible schema version its own database file (planning.db vs. planner.db) rather than migrate data in place. There is no in-place upgrade path to observe or reproduce.
+- **Why it matters:** Project is the first persisted entity in the rebuild sequence; picking a schema-evolution approach now determines how every later entity's schema changes will be handled, and there is no legacy precedent to fall back on.
+- **Options:**
+  1. Introduce a real migrations workflow (EF Core or equivalent) from the start of the rebuild.
+  2. Continue the legacy's "new database file per breaking schema change" convention.
+  3. Adopt a different persistence strategy entirely (flag explicitly if so).
+- **Proposed default:** 1
+- **Answer:** Option 1 — introduce a real migrations workflow from the start of the rebuild, using EF Core migrations.
+- **Decided by:** Pasan Gunathilaka
+- **Date:** 2026-07-30
+
+### CQ-004 — Single-manager, no-authentication model: preserve or add multi-user {{questions}} auth
+
+- **Type:** DECISION
+- **Blocking:** yes — blocks the User/auth data model and architecture underlying backlog item 1 and, transitively, every item referencing Owner/Assignee/Author/ChangedBy
+- **Source:** domain-model.md User entity ("Inference: the schema supports many User rows, but only one is ever 'the Manager acting in the app' at a time — both MainWindowViewModel.InitializeAsync and MainViewModel.InitializeAsync pick users.FirstOrDefault(u => u.Role == UserRole.Manager)?.Id as _currentUserId and never let the operator switch identity") and Enumerations/UserRole ("there is no login/authentication anywhere in the codebase... so this role is a data classification, not an access-control mechanism") and architecture.md L1 ("there is no multi-user login, network API, or remote collaboration surface in any manifest or opened file")
+- **Finding:** Although the data model allows multiple User rows with Role = Manager, both desktop apps hard-code the first Manager row found as the acting user at startup and provide no way to switch identity or log in — this is single-operator, no-authentication software today.
+- **Why it matters:** Whether the rebuild preserves this single-operator model or introduces real multi-user login/access-control is a foundational architecture decision that cannot be inferred from the legacy code, since the legacy code never needed to answer it.
+- **Options:**
+  1. Preserve single-operator, no-authentication behavior as-is.
+  2. Add multi-user login/authentication, with per-user data scoping where relevant.
+- **Proposed default:** 1 (adopt as-is — no requirement for multi-user access is stated anywhere in the source documents)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-005 — Task ownership model: retire WorkItem.AssigneeId (v1) in favor of TaskOwner (v2), or keep both
+
+- **Type:** DECISION
+- **Blocking:** yes — blocks backlog item 2 (Objective grouping/planner grid owner column) and item 3 (Task creation and viewing) acceptance criteria
+- **Source:** domain-model.md TaskOwner entity ("Inference: this coexists with (and duplicates) WorkItem.AssigneeId — the doc comment on WorkItem.AssigneeId calls it 'single-assignee link, from v1', implying TaskOwner is the intended v2 replacement, but neither PlanningService nor either desktop app retires the older field; both are populated independently in DbSeeder.cs")
+- **Finding:** WorkItem carries two separate, independently-populated ownership mechanisms: the original single-assignee AssigneeId FK ("v1"), and the newer many-to-many TaskOwner join table ("v2"). The doc comment implies TaskOwner supersedes AssigneeId, but no code path deprecates, migrates, or reconciles the two — a task can have an Assignee and a different, independent set of TaskOwners simultaneously. This could plausibly be read as a code/doc-comment conflict rather than a pure design decision, but the actionable next step is picking which model the rebuild adopts, not re-reading the source further.
+- **Why it matters:** The rebuild's task-ownership data model and UI depend on resolving which mechanism is authoritative going forward; picking wrong risks carrying forward two parallel, unsynchronized ownership concepts into the new system.
+- **Options:**
+  1. Retire WorkItem.AssigneeId; TaskOwner (many-to-many) becomes the single ownership model.
+  2. Keep both, matching legacy behavior exactly (single assignee + independent multi-owner set).
+  3. Retire TaskOwner; collapse back to a single-assignee model.
+- **Proposed default:** 1
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-009 — Status-transition affordance asymmetry: expose all four statuses everywhere, or preserve the Mark-Done-only MDI shortcut
+
+- **Type:** DECISION
+- **Blocking:** yes — blocks backlog item 4 (Task status transitions and the audit trail) acceptance criteria
+- **Source:** rebuild-backlog.md item 4 Verification inputs needed ("Executive Planning Desktop exposes all four WorkItemStatus values as buttons, while functional-spec.md documents only a single 'Mark selected Done' command for Manager Planner Desktop, with no bullet describing a UI path back to NotStarted/InProgress/Blocked in that shell. Neither document states whether this is intentional; the rebuild needs a human call on whether to unify or preserve the asymmetry.")
+- **Finding:** ExecutivePlanning.Desktop exposes all four WorkItemStatus values (Not started/In progress/Blocked/Mark done) as buttons; ManagerPlanner.Desktop exposes only "Mark selected Done," with no documented UI path to set a task back to NotStarted/InProgress/Blocked in that shell.
+- **Why it matters:** If ManagerPlanner.Desktop becomes the canonical UI (see CQ-001), a manager using the rebuild may be unable to un-mark a task Done or move it to Blocked/InProgress — a real functional gap unless resolved.
+- **Options:**
+  1. Expose all four status transitions everywhere in the rebuild (unify on the fuller affordance).
+  2. Preserve the Mark-Done-only shortcut for the MDI-style shell, matching legacy behavior exactly.
+- **Proposed default:** 1
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-010 — Inline task-add field exposure: unify full form everywhere, or keep the MDI shell's narrower fast-add
+
+- **Type:** DECISION
+- **Blocking:** yes — blocks backlog item 3 (Task/WorkItem creation and viewing) acceptance criteria
+- **Source:** functional-spec.md Named Gap #6 ("ManagerPlanner.Desktop's inline 'add task' never exposes an assignee or a custom deadline. MainViewModel.OnAddTask... always calls AddTaskAsync with assigneeId: null and a hardcoded DateTime.UtcNow.AddDays(7) deadline — unlike ExecutivePlanning.Desktop's task-add form, which exposes both fields explicitly.") and rebuild-backlog.md item 3 Verification inputs needed ("A human decision is needed on whether the rebuild's single task-creation feature preserves this narrower affordance as a distinct fast-add path or unifies both apps into one full form — the docs describe the asymmetry but not which is canonical.")
+- **Finding:** ManagerPlanner.Desktop's inline "add task" (Planner Grid, per objective) never lets the manager pick an assignee or set a custom deadline — it always creates the task unassigned with a hardcoded 7-day-out deadline. ExecutivePlanning.Desktop's task-add form exposes both fields.
+- **Why it matters:** This is a real functional gap for anyone using the narrower MDI-shell add-task flow; deciding whether to keep it as an intentional "fast add" shortcut or unify on the full form affects the rebuild's task-creation UI design.
+- **Options:**
+  1. Unify on one full task-creation form (assignee + custom deadline exposed) everywhere in the rebuild.
+  2. Keep a deliberate "fast add" shortcut (unassigned, default +7-day deadline) alongside a full form, matching the legacy split.
+- **Proposed default:** 1
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-024 — Golden-master truth table for the Accountability Verdict computation and tie-breaking sort order
+
+- **Type:** DATA
+- **Blocking:** yes — tied to CQ-019; rebuild-backlog.md flags this as the highest-priority verification input for backlog item 8 (Accountability reporting)
+- **Source:** rebuild-backlog.md item 8 Verification inputs needed ("Golden-master input/output pairs (task status + deadline + promise history → exact Verdict string and sort position) covering every branch of the precedence order and specifically the flagged nuance above... A golden-master sample of the sort order for a project with a mix of broken/overdue/pending/kept/on-track tasks, to confirm the rebuild's tie-breaking matches the legacy's exactly (the doc states the three sort keys but not tie-breaking behavior beyond them).")
+- **Finding:** No document provides concrete input/output examples for every branch of the Verdict precedence order (Kept → Broken → Overdue → Pending → On track), including the mislabeling nuance flagged in CQ-019, nor does any document specify exact tie-breaking behavior for rows that share the same broken/overdue/deadline sort keys.
+- **Why it matters:** The accountability report's verdict text and row ordering are the core output of backlog item 8 and the app's signature feature (per the domain's own framing, "the heart of the accountability feature"). Without a concrete golden-master truth table, the rebuild risks subtly wrong verdicts or sort order that look plausible but don't match legacy behavior.
+- **Options:**
+  1. Build a golden-master truth table (representative status/deadline/promise combinations → exact Verdict + sort position) by running the legacy app or exercising PlanningService directly, before implementing the rebuild's equivalent.
+  2. Implement from the documented precedence order and sort keys alone, accepting the risk of undocumented tie-breaking differences.
+- **Proposed default:** 1
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-008 — Meeting recording: bring into the MDI shell, or leave as a tabbed-app-only feature
+
+- **Type:** SCOPE
+- **Blocking:** yes — blocks backlog item 6 (Meeting recording and history) and item 7 (Progress notes and promise tracking, whose canonical workflow sequences meeting-recording first)
+- **Source:** functional-spec.md Named Gaps #1 ("ManagerPlanner.Desktop has no Meeting-recording capability at all. A repo-wide search confirms zero references to Meeting anywhere under src/ManagerPlanner.Desktop... but the newer, actively-published app... offers no UI to record a meeting, browse meeting history, or link a note to one.") and rebuild-backlog.md item 6 Verification inputs needed ("A human product decision is required: does the rebuild carry Meeting recording into both shells' successors, or preserve this as an intentional feature-tier split... The source documents describe the asymmetry but do not state which app's behavior is authoritative for the rebuild.")
+- **Finding:** ExecutivePlanning.Desktop has full meeting-recording UI (record, browse history, link notes to a meeting); ManagerPlanner.Desktop — the newer, actively-published app — has none at all. Neither document states whether this is an intentional feature-tier split or an unfinished port.
+- **Why it matters:** This directly determines the scope of backlog item 6, and interacts with CQ-001: if the MDI shell becomes canonical, Meeting recording either needs to be built for it or the feature is intentionally dropped from the rebuild.
+- **Options:**
+  1. Bring Meeting recording into the rebuild's chosen UI (build it if the MDI shell is canonical).
+  2. Intentionally drop Meeting recording from the rebuild, treating ProgressNote.MeetingId as always-null going forward.
+  3. Preserve the feature-tier split if the rebuild keeps multiple UI surfaces.
+- **Proposed default:** 1
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-019 — "Overdue (no promise)" verdict mislabels tasks that do carry a not-yet-due promise
+
+- **Type:** DEFECT
+- **Blocking:** yes — rebuild-backlog.md explicitly flags this as "the single highest-priority verification input in this backlog"; blocks backlog item 8 (Accountability reporting) acceptance criteria
+- **Source:** domain-model.md Business Rule 7 ("One code-level nuance worth flagging: IsOverdue is computed independently of whether a promise exists, and is checked before LatestPromisedDate.HasValue in the Verdict getter — so a task whose own deadline has passed but which does carry a promise not yet due (not yet 'broken') is labeled 'Overdue (no promise)' even though a promise is in fact on record. This is a direct reading of the code's evaluation order, not a guess.") and rebuild-backlog.md item 8 ("this exact-order quirk is easy for a rebuild developer to 'fix' as if it were a bug, silently breaking behavioral equivalence with the legacy system. This is the single highest-priority verification input in this backlog.")
+- **Finding:** AccountabilityRow.Verdict checks IsOverdue (deadline passed, not Done) before checking whether any promise exists — so a task with an overdue deadline that nonetheless has an active, not-yet-due promise on record is labeled "Overdue (no promise)," even though a promise genuinely exists. The label text is misleading precisely in this case, and nothing in the codebase states whether the ordering is deliberate (e.g. "overdue trumps an unbroken promise for urgency purposes") or an oversight in the Verdict getter's branch order.
+- **Why it matters:** This is exactly the shape of bug a rebuild developer would "fix" on sight (the label contradicts the underlying data), but doing so would silently change the legacy verdict-precedence behavior that backlog item 8's acceptance criteria are built around — getting this wrong either way has direct user-facing consequences for the accountability report.
+- **Options:**
+  1. Reproduce the legacy evaluation order exactly, including the misleading "Overdue (no promise)" label when a promise exists.
+  2. Fix as a defect — check for an existing promise before falling back to the generic overdue label (e.g. "Overdue (promise pending)").
+- **Proposed default:** 1 (adopt legacy behavior as-is for behavioral-equivalence purposes, pending explicit sign-off to change it — see CQ-024 for the golden-master verification needed either way)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-003 — Product scope breadth: broad manager-accountability tool vs. narrow software-delivery tool
+
+- **Type:** DECISION
+- **Blocking:** no
+- **Source:** codebase-report.md Domain section ("Inference: The seeded sample data in DbSeeder.cs... suggests the tool targets at least two different management contexts, not just software delivery... the product is pitched broadly at 'manager holds people accountable for commitments,' not narrowly at software project management") and domain-model.md Project entity ("Inference: 'Project' is used loosely for any manager-led initiative, not only software delivery")
+- **Finding:** Seeded sample data models both a software-engineering project ("Q3 Platform Migration") and a client-relationship-management project ("Key Account — Tracsis," whose checklist doubles as a stakeholder map), using the identical Project → Objective → WorkItem shape for both. Neither document states whether this breadth is deliberate positioning or just convenient demo data.
+- **Why it matters:** Whether the rebuild is positioned as a general "hold anyone accountable for any commitment" tool or a narrower "software project management" tool affects terminology, example content, and which future features make sense to add.
+- **Options:**
+  1. Preserve the broad "manager accountability" positioning as-is (software + non-software use cases both first-class).
+  2. Narrow the rebuild's scope and terminology specifically to software/project delivery.
+- **Proposed default:** 1 (adopt as-is — the seeded data's breadth is the only signal available, and narrowing is a bigger, reversible-later product call)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-014 — ChecklistItem single-subtree deletion: define intended behavior (never exercised by legacy)
+
+- **Type:** DECISION
+- **Blocking:** no
+- **Source:** domain-model.md Relationships ("ChecklistItem.Parent self-reference, Restrict — explicitly not Cascade, per the code comment: 'Restrict (children removed in app code) to avoid multiple cascade paths on SQLite.' In practice this path is never exercised directly: no PlanningService method deletes a single ChecklistItem; the only removal path is the whole-WorkItem cascade... sidestepping the self-referencing Restrict rule entirely") and functional-spec.md Named Gap #9 ("Whether removing one nested sub-tree while preserving siblings would work is unconfirmed by any code path read this session.") and rebuild-backlog.md item 5 Verification inputs needed ("Because the legacy system never runs this path, no golden master exists for it; a human must define the intended single-subtree-delete behavior for the rebuild rather than 'faithfully reproduce' something that has never executed.")
+- **Finding:** ChecklistItem.Parent is configured Restrict (not Cascade) specifically so that deleting one nested checklist sub-tree while preserving its siblings would require app-level cleanup code — but no such code exists anywhere; the only way any ChecklistItem is ever deleted is via the whole-WorkItem cascade, which removes every checklist row together. The single-subtree-delete path the Restrict rule anticipates has literally never run.
+- **Why it matters:** There is no legacy behavior to "faithfully reproduce" here — the rebuild needs a human decision defining what single-subtree checklist deletion should actually do (if added as a feature at all), since the schema anticipates it but the running app never exercises it.
+- **Options:**
+  1. Add single-checklist-subtree deletion in the rebuild, defining its behavior fresh (e.g. re-parent or delete children explicitly).
+  2. Don't add single-subtree deletion; keep the legacy's whole-WorkItem-cascade-only removal path.
+- **Proposed default:** 2 (adopt as-is — no legacy behavior exists to build from, and this is a low-traffic edge case)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-015 — StatusChange immutability: convention-only, or enforce at schema/type level
+
+- **Type:** DECISION
+- **Blocking:** no
+- **Source:** domain-model.md StatusChange entity ("Inference: 'immutable' is a design intent stated only in the doc comment — PlanningService exposes no update/delete method for StatusChange rows; the only way one is created is via ChangeStatusAsync, and the only way one is removed is transitively, by deleting its parent WorkItem/Project (cascade).")
+- **Finding:** StatusChange.cs's doc comment describes the entity as an "immutable audit record," but nothing in the schema or database enforces that — immutability today is purely a service-layer convention (PlanningService simply never exposes an update or single-row-delete method for it).
+- **Why it matters:** If the rebuild wants a stronger audit-trail guarantee (e.g. genuinely append-only storage, DB-level protection against tampering), that's a new requirement beyond what the legacy code enforces; if convention-only is acceptable, no extra work is needed.
+- **Options:**
+  1. Keep immutability as a service-layer convention only, matching legacy behavior.
+  2. Enforce immutability more strongly in the rebuild (e.g. append-only storage/table permissions, no update path in the data layer at all).
+- **Proposed default:** 1 (adopt as-is)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-020 — Golden-master capture of ProjectSummary.PercentComplete's rounding/truncation rule
+
+- **Type:** DATA
+- **Blocking:** no
+- **Source:** rebuild-backlog.md item 1 Verification inputs needed ("A golden-master capture of GetProjectSummaryAsync's exact PercentComplete computation for known task-count combinations — domain-model.md states only that it is 'a computed PercentComplete,' without the rounding/truncation rule; the rebuild needs the legacy app's actual displayed output for representative inputs, not just equivalent logic.")
+- **Finding:** ProjectSummary.PercentComplete is described only as "a computed PercentComplete" — no document states its rounding or truncation rule (e.g. whether 1/3 displays as 33%, 33.3%, or 34%).
+- **Why it matters:** A rebuild that recomputes an "equivalent" percentage without matching the exact rounding rule could display a different number than the legacy app for the same data, silently breaking behavioral equivalence in a highly visible summary figure.
+- **Options:**
+  1. Capture representative task-count combinations from the legacy app's source/runtime and match the exact rounding/truncation rule.
+  2. Pick a reasonable rounding rule (e.g. round to nearest integer) without matching legacy exactly, accepting minor display differences.
+- **Proposed default:** 1 (deferred to data/code profiling before backlog item 1 is finalized)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-021 — Golden-master capture of MeetingType dropdown display strings
+
+- **Type:** DATA
+- **Blocking:** no
+- **Source:** rebuild-backlog.md item 6 Verification inputs needed ("A golden-master capture of the exact MeetingType display strings shown in the dropdown (e.g. whether 'VideoCall' renders as 'Video Call' or verbatim) — none of the four documents quote the rendered label text, only the enum member names.")
+- **Finding:** MeetingType's enum members (VideoCall, PhysicalMeeting, PhoneCall) are documented only by their C# names — no document quotes the actual text rendered in the meeting-type dropdown.
+- **Why it matters:** If the rebuild's dropdown uses different label text than the legacy app (e.g. "VideoCall" vs. "Video Call"), that's a small but visible fidelity gap in a form the manager uses regularly.
+- **Options:**
+  1. Capture the exact rendered strings from the legacy app's XAML/converter source or runtime and match them.
+  2. Choose new, more polished label text without matching legacy exactly.
+- **Proposed default:** 1 (deferred to verification against the legacy app before backlog item 6 is finalized)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-022 — Golden-master capture of exact validation error message text
+
+- **Type:** DATA
+- **Blocking:** no
+- **Source:** rebuild-backlog.md item 7 Verification inputs needed ("A golden-master capture of the exact validation error message text at the overlong-text and date-window boundaries — domain-model.md quotes only the empty-text message verbatim ('The note is empty — type what was said before saving.'); the 2000-character and one-month-window rejection messages are described but not quoted, so exact UI wording needs to be captured from the running legacy app for a faithful rebuild.")
+- **Finding:** Only the empty-note validation message is quoted verbatim in the analysis ("The note is empty — type what was said before saving."). The overlong-text (>2000 chars) and out-of-window date (>1 month back, or future) rejection messages are described by behavior but their exact wording was not captured.
+- **Why it matters:** If the rebuild is meant to reproduce the legacy's exact validation UX wording, the un-quoted messages need to be captured from source/running app rather than freshly authored, to avoid an inconsistent voice across validation messages.
+- **Options:**
+  1. Capture the exact PlanningValidation.cs message strings for the overlong-text and date-window cases and reuse them verbatim.
+  2. Author new validation message text for the rebuild, matching only the empty-text message's tone.
+- **Proposed default:** 1 (deferred to source/code verification before backlog item 7 is finalized)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-023 — Full golden-master export of DbSeeder's complete seeded dataset
+
+- **Type:** DATA
+- **Blocking:** no
+- **Source:** rebuild-backlog.md item 11 Verification inputs needed ("A full golden-master export of DbSeeder.cs's complete seeded dataset (every Project/Objective/WorkItem/ChecklistItem/note/text string) — the four documents quote only representative excerpts... not the full dataset. The rebuild needs the complete content to reproduce identical 'Load'/'Reset' sample data, not just an equivalent-looking one.")
+- **Finding:** The analysis documents quote only representative excerpts of DbSeeder.cs's seeded sample data (e.g. "Design new database schema," the Tracsis stakeholder names) — not the complete dataset text.
+- **Why it matters:** Backlog item 11 (Sample-data lifecycle) needs the complete seeded content, not an equivalent-looking approximation, if the rebuild's "Load sample data"/"Reset to sample data" features are meant to produce identical demo data to the legacy app.
+- **Options:**
+  1. Export DbSeeder.cs's full seed dataset directly from source and reuse it verbatim in the rebuild.
+  2. Author new, equivalent-looking sample data for the rebuild without matching legacy verbatim.
+- **Proposed default:** 1 (deferred to a direct full read of DbSeeder.cs before backlog item 11 is finalized — a straightforward extraction task, not an open design question)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-025 — Manual golden-master captures of MDI chrome drag/resize/maximize/z-order behavior
+
+- **Type:** DATA
+- **Blocking:** no
+- **Source:** rebuild-backlog.md item 12 Verification inputs needed ("Because there is zero automated test coverage for this component (architecture.md L4: 'none of this state is exercised by any test'), a human must supply manual/golden-master captures of exact drag/resize/maximize/restore/z-order behavior — static analysis of the source cannot establish runtime interaction fidelity.") and architecture.md L4 ("none of this state is exercised by any test (tests/ExecutivePlanning.Tests only references ExecutivePlanning.Core.csproj...)")
+- **Finding:** MdiWindow's hand-rolled drag/resize/maximize/restore/z-order state machine has zero automated test coverage; its exact runtime behavior (e.g. precise resize-grip bounds, z-order bump timing, restore-from-maximize positioning) can only be confirmed by manually running the legacy app, not by reading the source.
+- **Why it matters:** If the rebuild's MDI chrome (or its equivalent) is meant to feel behaviorally identical to the legacy shell, subtle interaction details not visible from static code reading need to be captured from the running app first.
+- **Options:**
+  1. Manually exercise the legacy ManagerPlanner.Desktop app and capture golden-master behavior for drag/resize/maximize/restore/z-order before building the rebuild's equivalent chrome.
+  2. Build new MDI-equivalent chrome from the documented behavior list alone, accepting minor interaction-fidelity differences.
+- **Proposed default:** 1 (deferred to manual verification against the running legacy app before backlog item 12 is finalized)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-006 — Win95-style skin: preserve as deliberate branding, or modernize
+
+- **Type:** SCOPE
+- **Blocking:** no
+- **Source:** codebase-report.md Domain section ("Inference (low confidence): The Win95-style skin in ManagerPlanner.Desktop (Themes/Win95.axaml, MessageBox.cs's #c0c0c0 grey dialog background and 'Tahoma, \"MS Sans Serif\", Geneva, Verdana, sans-serif' font stack, and MdiHost's cascade/tile semantics) may be a deliberate nostalgia/personality choice for a 'no-nonsense manager' persona rather than a technical necessity — this is a stylistic guess; nothing in the docs explicitly states the design rationale beyond the README calling it a 'classic Win95-style MDI variant.'")
+- **Finding:** ManagerPlanner.Desktop's entire visual identity (Win95 grey chrome, retro font stack, cascade/tile MDI semantics) is explicitly flagged by the analysis as a low-confidence guess about design intent — nothing in the repo states whether this is deliberate branding to keep or an incidental styling artifact.
+- **Why it matters:** If the Win95 look is intentional branding, the rebuild should preserve or knowingly evolve it; if incidental, the rebuild is free to adopt a standard modern theme without "losing" anything intentional.
+- **Options:**
+  1. Preserve the Win95-style skin as intentional branding/personality.
+  2. Modernize to a standard, non-retro UI theme.
+- **Proposed default:** 1 (adopt as-is — no stated rationale exists either way, and this is the lower-risk, easily-revisited-later default)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-007 — Objective.KeyResult: free text, or a measurable OKR target/actual pair
+
+- **Type:** SCOPE
+- **Blocking:** no
+- **Source:** domain-model.md Objective entity ("Inference: this is a lightweight OKR-style grouping — KeyResult is a free-text field, not a measurable target/value pair, so the 'OKR' resemblance is structural (Objective groups Tasks) more than a fully-modeled OKR system.")
+- **Finding:** Objective.KeyResult is a free-text field ("optional key-result / definition of done for the objective"), not a measurable numeric target/actual pair as in a true OKR system — the OKR resemblance is only structural (Project → Objective → Task grouping).
+- **Why it matters:** If the rebuild wants genuine OKR tracking (measurable key results, progress against a target), that's a new capability beyond what the legacy schema supports; if free-text is sufficient, no schema change is needed.
+- **Options:**
+  1. Keep KeyResult as free text, matching legacy behavior.
+  2. Model KeyResult as a measurable target/actual pair (true OKR tracking).
+- **Proposed default:** 1 (adopt as-is)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-011 — Missing management UI for supporting entities (team members, task owners, checklist items, objective removal, project status)
+
+- **Type:** SCOPE
+- **Blocking:** no
+- **Source:** functional-spec.md Named Gaps #3 ("No UI adds a new team member... The team roster is fixed to whatever DbSeeder.Seed created... 'grow the team' is not a reachable capability in either running app today."), #4 ("No UI sets/changes task owners... there is no control in either app to add, remove, or change a task's owners."), #5 ("No UI adds a new checklist item... cannot add a new one from either app's UI."), #10 ("No UI changes a Project's Status. AddProjectAsync always creates a project as the struct default, ProjectStatus.Active; no command in either app's ProjectsView/new-project form sets OnHold/Completed/Cancelled."); domain-model.md's Objective→WorkItem relationship note ("a task survives its objective being removed (though no UI path currently removes a single objective — see Named Gaps)"); and domain-model.md's User→Project relationship note ("a Manager cannot be deleted while still owning projects (no DeleteUserAsync exists in PlanningService at all, so this restriction is currently untestable through either UI)")
+- **Finding:** Several entity-management capabilities exist only in PlanningService/DbSeeder and are exercised only by tests or seed data — neither desktop app exposes UI to add or remove a team member, change a task's owner set, add a new checklist item, remove a single objective, or change a project's status after creation. The team roster, ownership assignments, and checklist trees are effectively fixed to whatever DbSeeder produced.
+- **Why it matters:** These are all "the rebuild could add this, but the legacy app never did" scope calls — bundling them together surfaces the full extent of what's currently seed-only/read-only so the rebuild's MVP scope can be set deliberately rather than each gap being independently rediscovered later.
+- **Options:**
+  1. Add full management UI (add/remove team members, edit task owners, add checklist items, remove objectives, change project status) in the rebuild.
+  2. Preserve the legacy's create-and-seed-only scope for these entities in the initial rebuild, revisiting post-MVP.
+  3. Add some selectively (e.g. checklist-item creation) while deferring others, decided per capability.
+- **Proposed default:** 2 (adopt as-is for MVP — none of these are reachable in the legacy apps today, so there is no behavior to preserve, only a scope decision to make deliberately rather than by accident)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-012 — WorkItem.DiscoveredInMeetingId: wire it up, or intentionally drop it
+
+- **Type:** SCOPE
+- **Blocking:** no
+- **Source:** functional-spec.md Named Gap #2 ("WorkItem.DiscoveredInMeetingId is never set through either app's UI. In ExecutivePlanning.Desktop, the 'Discovered in a meeting' checkbox only sets IsDiscovered = true... In ManagerPlanner.Desktop, the inline 'add task'... never passes isDiscovered at all... the '⚑ discovered' badge in PlannerGridView.axaml only ever renders seeded data.") and rebuild-backlog.md item 3 Verification inputs needed ("Since the legacy app never exercises this link, there is no golden master to reproduce; a human must decide whether the rebuild wires it up or intentionally leaves it dormant.")
+- **Finding:** WorkItem.DiscoveredInMeetingId (the FK linking a task to the meeting it was "discovered" in) is never actually set by either app's UI — the discovered checkbox only flips the separate IsDiscovered boolean. The discovered badge shown in the planner grid only ever reflects seeded data, never a task created through the running apps.
+- **Why it matters:** This is a modeled relationship with no working code path — deciding whether to wire it up properly in the rebuild or drop it avoids silently carrying forward a dead field.
+- **Options:**
+  1. Wire up DiscoveredInMeetingId properly in the rebuild (task creation lets the manager pick which meeting it was discovered in).
+  2. Drop the field/relationship from the rebuild; keep only the boolean IsDiscovered flag.
+- **Proposed default:** 2 (the field has never been exercised by any real user action, so there is no legacy behavior to preserve — dropping it is the simpler default, revisit if discovered-in-meeting linkage turns out to matter)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-013 — MDI child windows: add a taskbar-equivalent, or preserve menu-only recovery
+
+- **Type:** SCOPE
+- **Blocking:** no
+- **Source:** functional-spec.md Named Gap #7 ("Minimized/closed MDI child windows have no taskbar-equivalent. MdiWindow.cs's PART_Min and PART_Close handlers both just set IsVisible = false... the only recovery path is the Window menu or window bar's 'Show ...' buttons... a first-time user who closes or minimizes a window without noticing the Window menu has no other visible way to bring it back.") and rebuild-backlog.md item 12 Verification inputs needed ("A human product decision is needed on whether the rebuild preserves this limitation or adds a taskbar-equivalent.")
+- **Finding:** Minimizing or closing an MDI child window in ManagerPlanner.Desktop just hides it (IsVisible = false); the only way to bring it back is the Window menu or window bar's "Show ..." buttons — there's no taskbar-style persistent list of open/hidden windows.
+- **Why it matters:** This is a usability gap for first-time users (per the analysis's own framing) but is also "works as designed" — worth a deliberate decision rather than an incidental fix or omission in the rebuild.
+- **Options:**
+  1. Add a taskbar-equivalent (persistent list of open/hidden windows) in the rebuild.
+  2. Preserve the current Window-menu-only recovery path, matching legacy behavior.
+- **Proposed default:** 2 (adopt as-is)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-018 — CompletedUtc is cleared when a task is moved out of Done — intentional or bug?
+
+- **Type:** DEFECT
+- **Blocking:** no
+- **Source:** domain-model.md Business Rule 9 ("Completion timestamp tracks the Done transition, both ways — ChangeStatusAsync: task.CompletedUtc = newStatus == WorkItemStatus.Done ? DateTime.UtcNow : null; — moving a task out of Done clears CompletedUtc back to null, not just setting it when entering Done. Mechanical: the code does this unconditionally; no comment discusses re-opening a completed task.")
+- **Finding:** When a task is moved out of Done status (e.g. reopened to InProgress), ChangeStatusAsync unconditionally clears CompletedUtc back to null — no code comment discusses whether this is intentional, and it means the fact a task was once completed (and when) is lost the moment it's reopened, even though the StatusChange audit trail still records the transition.
+- **Why it matters:** This looks like it could be an oversight (losing a "was completed on X" fact seems like unwanted data loss) or it could be intentional (CompletedUtc should only mean "currently complete since"). The rebuild needs to decide whether to reproduce this exactly or treat it as a defect to fix.
+- **Options:**
+  1. Reproduce legacy behavior exactly — clear CompletedUtc when a task leaves Done.
+  2. Fix as a defect — preserve the original completion timestamp (e.g. via a separate "LastCompletedUtc" field, or rely on StatusChange history only) even after reopening.
+- **Proposed default:** 1 (adopt legacy behavior as-is — StatusChange's audit trail already retains the transition history, so no data is truly lost, only CompletedUtc's "currently complete" semantics are affected)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-016 — Field-length ceilings (120/150/300/2000 chars) have no stated rationale
+
+- **Type:** MECHANICAL
+- **Blocking:** no
+- **Source:** domain-model.md Business Rule 1 ("Project name required, ≤120 chars... Mechanical: the 120-character ceiling has no stated rationale in the code."), Business Rule 3 ("Objective title required, ≤150 chars... Mechanical: no stated reason for 150 vs. the task/project limit of 120."), Business Rule 5 ("Note text required, ≤2000 chars... the 2000-character ceiling itself is mechanical/unexplained."), and Business Rule 4 ("Checklist label required, ≤300 chars")
+- **Finding:** PlanningValidation.cs enforces a different, unexplained maximum length per field: Project name and Task title ≤120 chars, Objective title ≤150, ChecklistItem label ≤300, ProgressNote text ≤2000. No code comment or document states why these specific numbers (or the differences between them, e.g. 150 vs. 120) were chosen.
+- **Why it matters:** These are exactly the kind of arbitrary legacy constants a rebuild should either adopt unquestioned or deliberately revisit — left unaddressed, a rebuild developer might "round" them to a single shared constant, silently changing validation behavior.
+- **Options:**
+  1. Adopt all four ceilings as-is (120/150/300/2000).
+  2. Revisit and rationalize the limits (e.g. a single shared constant, or limits more generous for a modern UI).
+- **Proposed default:** 1 (adopt as-is)
+- **Answer:**
+- **Decided by:**
+- **Date:**
+
+### CQ-017 — Note backdate window of exactly one month has no stated rationale
+
+- **Type:** MECHANICAL
+- **Blocking:** no
+- **Source:** domain-model.md Business Rule 6 ("A note can only be dated within a fixed backward/forward window — ValidateNoteDate (:61-75, NoteBackdateMonths = 1). Rejects a note dated more than one month before today (mechanical — the choice of exactly one month is not explained anywhere in the code) and rejects any note dated after today.")
+- **Finding:** ProgressNote entries can only be dated up to exactly one month in the past (NoteBackdateMonths = 1) and never in the future. The one-month figure has no stated rationale beyond the mechanism itself; only the future-date restriction has an inferred rationale (a note describes something already said).
+- **Why it matters:** This is an arbitrary legacy constant with real user-facing effect (rejecting otherwise-valid backdated notes past one month) — worth a deliberate adopt-or-revisit call rather than being silently carried forward or silently loosened.
+- **Options:**
+  1. Adopt the one-month backdate window as-is.
+  2. Revisit the window (make it configurable, or pick a different fixed value).
+- **Proposed default:** 1 (adopt as-is)
+- **Answer:**
+- **Decided by:**
+- **Date:**

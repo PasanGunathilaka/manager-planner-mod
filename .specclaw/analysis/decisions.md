@@ -1,0 +1,70 @@
+# Decisions: manager-planner-mod
+
+**Date generated:** 2026-07-30
+**Source:** .specclaw/analysis/clarifications.md
+
+<!--
+  This is the clean, pinnable decision record /specclaw:clarify --resolve
+  produces from clarifications.md's answered questions. Every entry below
+  is a mechanical transcription of an already-answered question — the
+  Answer/Decided by/Date fields are transcribed, never reinterpreted.
+  Re-running --resolve is idempotent: it always reflects the current state
+  of clarifications.md's answered blocks, replacing this file's prior
+  content wholesale (the prior version is archived, never lost).
+
+  Pin this file — add `.specclaw/analysis/decisions.md` to config.yaml's
+  `context.pin` (raise `max_lines` accordingly) and `git add` it, so every
+  downstream /specclaw:propose, /specclaw:plan, and /specclaw:build cites
+  these decisions as grounding instead of re-deriving them. Discovery
+  enumerates via `git ls-files` — an untracked file is invisible to it.
+-->
+
+## Decisions
+
+### CQ-001 — Canonical front-end: ExecutivePlanning.Desktop vs. ManagerPlanner.Desktop
+
+- **Type:** DECISION
+- **Decision:** Option 3 Merge both legacy feature sets into one modern rebuilt UI. ManagerPlanner.Desktop is treated as the newer operational reference, but useful capabilities that exist only in ExecutivePlanning.Desktop, such as meeting recording and full status management, must not be silently dropped.
+- **Decided by:** Pasan Gunathilaka
+- **Date:** 2026/07/30
+- **Source:** codebase-report.md Risks/Tech-Debt ("Two near-duplicate front ends over the same Core... it is undocumented whether ExecutivePlanning.Desktop is still meant to be maintained or is legacy code being kept temporarily") and Suggested First Changes ("clarify (this is undocumented) whether ExecutivePlanning.Desktop is still a live target — the five most recent commits... and the publish/ scripts all target ManagerPlanner.Desktop only")
+
+### CQ-002 — Schema-evolution / migrations strategy for the rebuild
+
+- **Type:** DECISION
+- **Decision:** Option 1 — introduce a real migrations workflow from the start of the rebuild, using EF Core migrations.
+- **Decided by:** Pasan Gunathilaka
+- **Date:** 2026-07-30
+- **Source:** codebase-report.md Risks/Tech-Debt ("No EF Core migrations exist anywhere in the repo... PlanningDbContextFactory.Create only calls ctx.Database.EnsureCreated()... the codebase's own documented workaround for schema evolution... is to fork a brand-new database file per app version rather than migrate in place") and rebuild-backlog.md item 1 Verification inputs needed ("a human must decide the rebuild's schema-evolution strategy — the source has no migration path to observe as a reference")
+
+## ADR Promotion Candidates
+
+- **CQ-001** — Merge Legacy Front-Ends into a Single Rebuilt UI — Sets the rebuild's UI consolidation strategy across two divergent legacy apps, shaping scope for most downstream feature work and hard to revisit once built.
+- **CQ-002** — Adopt EF Core Migrations for Schema Evolution — Establishes the schema-change workflow for every persisted entity in the rebuild, replacing the legacy's no-migration convention with no prior precedent to fall back on.
+
+
+## Outstanding Questions
+
+- **CQ-003** — Product scope breadth: broad manager-accountability tool vs. narrow software-delivery tool (Type: DECISION, Blocking: no)
+- **CQ-004** — Single-manager, no-authentication model: preserve or add multi-user {{questions}} auth (Type: DECISION, Blocking: yes — blocks the User/auth data model and architecture underlying backlog item 1 and, transitively, every item referencing Owner/Assignee/Author/ChangedBy)
+- **CQ-005** — Task ownership model: retire WorkItem.AssigneeId (v1) in favor of TaskOwner (v2), or keep both (Type: DECISION, Blocking: yes — blocks backlog item 2 (Objective grouping/planner grid owner column) and item 3 (Task creation and viewing) acceptance criteria)
+- **CQ-006** — Win95-style skin: preserve as deliberate branding, or modernize (Type: SCOPE, Blocking: no)
+- **CQ-007** — Objective.KeyResult: free text, or a measurable OKR target/actual pair (Type: SCOPE, Blocking: no)
+- **CQ-008** — Meeting recording: bring into the MDI shell, or leave as a tabbed-app-only feature (Type: SCOPE, Blocking: yes — blocks backlog item 6 (Meeting recording and history) and item 7 (Progress notes and promise tracking, whose canonical workflow sequences meeting-recording first))
+- **CQ-009** — Status-transition affordance asymmetry: expose all four statuses everywhere, or preserve the Mark-Done-only MDI shortcut (Type: DECISION, Blocking: yes — blocks backlog item 4 (Task status transitions and the audit trail) acceptance criteria)
+- **CQ-010** — Inline task-add field exposure: unify full form everywhere, or keep the MDI shell's narrower fast-add (Type: DECISION, Blocking: yes — blocks backlog item 3 (Task/WorkItem creation and viewing) acceptance criteria)
+- **CQ-011** — Missing management UI for supporting entities (team members, task owners, checklist items, objective removal, project status) (Type: SCOPE, Blocking: no)
+- **CQ-012** — WorkItem.DiscoveredInMeetingId: wire it up, or intentionally drop it (Type: SCOPE, Blocking: no)
+- **CQ-013** — MDI child windows: add a taskbar-equivalent, or preserve menu-only recovery (Type: SCOPE, Blocking: no)
+- **CQ-014** — ChecklistItem single-subtree deletion: define intended behavior (never exercised by legacy) (Type: DECISION, Blocking: no)
+- **CQ-015** — StatusChange immutability: convention-only, or enforce at schema/type level (Type: DECISION, Blocking: no)
+- **CQ-016** — Field-length ceilings (120/150/300/2000 chars) have no stated rationale (Type: MECHANICAL, Blocking: no)
+- **CQ-017** — Note backdate window of exactly one month has no stated rationale (Type: MECHANICAL, Blocking: no)
+- **CQ-018** — CompletedUtc is cleared when a task is moved out of Done — intentional or bug? (Type: DEFECT, Blocking: no)
+- **CQ-019** — "Overdue (no promise)" verdict mislabels tasks that do carry a not-yet-due promise (Type: DEFECT, Blocking: yes — rebuild-backlog.md explicitly flags this as "the single highest-priority verification input in this backlog"; blocks backlog item 8 (Accountability reporting) acceptance criteria)
+- **CQ-020** — Golden-master capture of ProjectSummary.PercentComplete's rounding/truncation rule (Type: DATA, Blocking: no)
+- **CQ-021** — Golden-master capture of MeetingType dropdown display strings (Type: DATA, Blocking: no)
+- **CQ-022** — Golden-master capture of exact validation error message text (Type: DATA, Blocking: no)
+- **CQ-023** — Full golden-master export of DbSeeder's complete seeded dataset (Type: DATA, Blocking: no)
+- **CQ-024** — Golden-master truth table for the Accountability Verdict computation and tie-breaking sort order (Type: DATA, Blocking: yes — tied to CQ-019; rebuild-backlog.md flags this as the highest-priority verification input for backlog item 8 (Accountability reporting))
+- **CQ-025** — Manual golden-master captures of MDI chrome drag/resize/maximize/z-order behavior (Type: DATA, Blocking: no)
