@@ -317,9 +317,9 @@
   1. Preserve the Win95-style skin as intentional branding/personality.
   2. Modernize to a standard, non-retro UI theme.
 - **Proposed default:** 1 (adopt as-is — no stated rationale exists either way, and this is the lower-risk, easily-revisited-later default)
-- **Answer:**
-- **Decided by:**
-- **Date:**
+- **Answer:** Option 2 — Modernize the application using a clean, modern UI theme. The Win95-style appearance is not considered a required part of the legacy business behaviour. The rebuilt application should use a consistent Blazor-compatible component and CSS framework, preferably MudBlazor, while preserving the existing functional workflows and business rules.
+- **Decided by:** Pasan Gunathilaka
+- **Date:** 2026-07-30
 
 ### CQ-007 — Objective.KeyResult: free text, or a measurable OKR target/actual pair
 
