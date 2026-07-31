@@ -7,6 +7,14 @@
         {
             <div style="font-size:0.85em;color:#606060;">@WorkItem.Deadline.Value.ToString("yyyy-MM-dd")</div>
         }
+        @if (IsOverdue)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Error" Style="font-weight:bold;">OVERDUE</MudText>
+        }
+        @if (IsDiscovered)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Warning">⚑ discovered</MudText>
+        }
     </td>
     <td>
         <div>@(WorkItem.Assignee?.FullName ?? "Unassigned")</div>
@@ -20,7 +28,16 @@
             </MudButtonGroup>
         </div>
     </td>
-    <td>&mdash;</td>
+    <td>
+        @if (WorkItem.Checklist.Any(c => c.ParentId == null))
+        {
+            <ChecklistTree Items="WorkItem.Checklist.Where(c => c.ParentId == null).OrderBy(c => c.SortOrder).ToList()" />
+        }
+        else
+        {
+            <text>&mdash;</text>
+        }
+    </td>
 </tr>
 
 @code {
@@ -47,6 +64,10 @@
         WorkItemStatus.Done => Color.Success,
         _ => Color.Default
     };
+
+    private bool IsOverdue => WorkItem.Deadline.HasValue && WorkItem.Deadline.Value < DateTime.UtcNow && WorkItem.Status != WorkItemStatus.Done;
+
+    private bool IsDiscovered => WorkItem.IsDiscovered;
 
     private async Task SetStatusAsync(WorkItemStatus newStatus)
     {

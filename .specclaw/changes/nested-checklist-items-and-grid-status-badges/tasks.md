@@ -35,7 +35,7 @@ scope per spec.md NFR2/AC8.
 
 ### Wave 2 — UI + verification
 
-- [ ] `T2` — `ChecklistTree` component, wired into `TaskRow`, plus OVERDUE/discovered badges, end-to-end verification
+- [x] `T2` — `ChecklistTree` component, wired into `TaskRow`, plus OVERDUE/discovered badges, end-to-end verification
   - Files: `src/ManagerPlanner.Web/Components/Pages/ChecklistTree.razor`, `src/ManagerPlanner.Web/Components/Pages/TaskRow.razor`
   - Estimate: medium
   - Depends: `T1`
