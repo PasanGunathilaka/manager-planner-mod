@@ -1,6 +1,6 @@
 # Project Context
 
-_Last updated: 2026-07-28 — after "ui-modernization"._
+_Last updated: 2026-07-31 — after "nested-checklist-items-and-grid-status-badges"._
 
 ## Architecture Overview
 
@@ -16,7 +16,7 @@ single Blazor web app:
   (+ `.Design`, dev-only), matching the legacy `ExecutivePlanning.Core.csproj`'s
   shape.
 - **`src/ManagerPlanner.Web`** (Blazor Server, unified .NET 8 "Blazor Web
-  App" template, now with **global** Interactive Server render mode — see
+  App" template, with **global** Interactive Server render mode — see
   below) — references `.Core` directly. No API/DTO boundary between them
   (components call `PlanningService` directly), per ADR-0002's
   flat-service-surface guidance. **MudBlazor 9.7.0** is the app's
@@ -35,20 +35,42 @@ Grid: add-objective form, per-objective task rows, and a single unified
 assignee, deadline, description, "discovered in a meeting" checkbox).
 Tasks with no `ObjectiveId` render in a separate "Ungrouped" section, shown
 only when non-empty. Each task row is rendered by a shared `TaskRow.razor`
-component (title + deadline, assignee-or-"Unassigned" + a color-coded
-`MudChip` status badge, plus a `MudButtonGroup` of four inline
-status-change buttons — "Not started" / "In progress" / "Blocked" /
-"Mark done" — that call `PlanningService.ChangeStatusAsync` directly and
-notify the parent page via a parameterless `StatusChanged` `EventCallback`;
-no checklist tree yet — that remains a separate not-yet-built backlog
-item). These are the first four slices of the legacy app's feature surface
-(Project management, Objective grouping, Task creation/viewing, Task
-status transitions), now uniformly restyled on MudBlazor (`ui-modernization`,
-the fifth merged change and the first pure cross-cutting UI change rather
-than a new vertical feature slice — zero `PlanningService`/`PlanningRules`/
-entity/migration changes anywhere in it). "Switching the active project"
-is URL navigation between `/projects/{id}` rows; there is no separate
-"current project" session state.
+component with three cells: its first `<td>` shows title + deadline plus
+two conditional badges — an "OVERDUE" caption (`MudText`, `Color.Error`)
+when `Deadline` is in the past and `Status != Done`, and a "⚑ discovered"
+caption (`MudText`, `Color.Warning`) when `IsDiscovered` — two computed
+properties (`IsOverdue`/`IsDiscovered`) added alongside the file's existing
+`StatusText`/`StatusColor` computed properties, matching the legacy
+`RowViewModels.cs` predicates term for term
+(`nested-checklist-items-and-grid-status-badges`); its second `<td>` shows
+assignee-or-"Unassigned" + a color-coded `MudChip` status badge, plus a
+`MudButtonGroup` of four inline status-change buttons — "Not started" /
+"In progress" / "Blocked" / "Mark done" — that call
+`PlanningService.ChangeStatusAsync` directly and notify the parent page via
+a parameterless `StatusChanged` `EventCallback` (wired to `ProjectDetail`'s
+full `RefreshAsync`, since the page's summary counts depend on status);
+its third `<td>` renders a new recursive `ChecklistTree.razor` component
+when the task has any root-level checklist items (`WorkItem.Checklist.Any(c
+=> c.ParentId == null)`), else keeps the original `&mdash;` placeholder —
+one `MudCheckBox<bool>` per item (label + optional `"— {FullName}"`
+assignee text), recursing into itself for each item's children ordered by
+`SortOrder`, with no hard-coded depth limit. Unlike the status buttons,
+ticking a checklist checkbox calls `PlanningService.ToggleChecklistItemAsync`
+directly and updates only local component state (`item.IsDone`) — it has no
+`EventCallback` parameter at all and never triggers `ProjectDetail`'s
+`RefreshAsync`, because no summary/aggregate on the page derives from
+checklist-completion state. This closes out rebuild-backlog item BL-005 —
+the last unbuilt piece of the Planner Grid's per-task cell — as an
+extension of the existing Task creation/viewing surface, not a new
+vertical slice. These are the first four slices of the legacy app's
+feature surface (Project management, Objective grouping, Task
+creation/viewing, Task status transitions), now uniformly restyled on
+MudBlazor (`ui-modernization`, the fifth merged change and the first pure
+cross-cutting UI change rather than a new vertical feature slice — zero
+`PlanningService`/`PlanningRules`/entity/migration changes anywhere in
+it). "Switching the active project" is URL navigation between
+`/projects/{id}` rows; there is no separate "current project" session
+state.
 
 `MainLayout.razor` is now a real `MudLayout` app shell — `MudAppBar` +
 `MudDrawer`/`MudNavMenu` with `MudNavLink`s to `/` and `/projects` — plus
@@ -80,19 +102,24 @@ Accountability — backlog items 6/7/8, still not built) just add another
   legacy `PlanningValidation.cs` exactly; don't simplify it back to
   untrimmed/local-time checks.
 - Business logic lives in `ManagerPlanner.Core.Services.PlanningService` —
-  one method per legacy operation (ten so far), each opening/disposing its
-  own `PlanningDbContext` via the injected `IDbContextFactory` (see Key
+  one method per legacy operation (eleven so far), each opening/disposing
+  its own `PlanningDbContext` via the injected `IDbContextFactory` (see Key
   Patterns). Read-model DTOs (e.g. `ProjectSummary`) live alongside it in
   `Services/Reports.cs`, matching the legacy file split. Not every method
   is a straight port: `GetUngroupedTasksForProjectAsync` has no legacy
   equivalent (added because the unified add-task form can produce a task
   with `ObjectiveId == null`), and `AddTaskAsync` deliberately drops the
   legacy `discoveredInMeetingId` parameter (nothing can supply one yet —
-  `Meeting` doesn't exist). `ChangeStatusAsync`, by contrast, is a verbatim
-  port with no signature deviation beyond the established
-  `IDbContextFactory` pattern. `ui-modernization` touched zero lines of
-  this file or `Validation/` — confirmed by an empty `git diff` across the
-  whole change; it is a pure Razor/markup restyle.
+  `Meeting` doesn't exist). `ChangeStatusAsync` and `ToggleChecklistItemAsync`
+  (the eleventh method, `nested-checklist-items-and-grid-status-badges`),
+  by contrast, are verbatim ports with no signature deviation beyond the
+  established `IDbContextFactory` pattern — `ToggleChecklistItemAsync`'s
+  body (`item.IsDone = isDone; item.CompletedUtc = isDone ?
+  DateTime.UtcNow : null; SaveChangesAsync()`) is identical to the real
+  legacy `ExecutivePlanning.Core/Services/PlanningService.cs`.
+  `ui-modernization` touched zero lines of this file or `Validation/` —
+  confirmed by an empty `git diff` across the whole change; it is a pure
+  Razor/markup restyle.
 - **Render mode is now set globally, once, in `App.razor` — not per page.**
   `<HeadOutlet @rendermode="InteractiveServer" />` and
   `<Routes @rendermode="InteractiveServer" />` cover the whole app
@@ -142,8 +169,9 @@ Accountability — backlog items 6/7/8, still not built) just add another
   renders (ADR-0002). Every future component that touches the database
   should inject the factory and create/dispose a short-lived context per
   operation, not hold a long-lived injected `DbContext`. `ChangeStatusAsync`
-  (the tenth `PlanningService` method, added in `task-status-transitions`)
-  follows this exactly, same as every method before it.
+  (the tenth `PlanningService` method) and `ToggleChecklistItemAsync` (the
+  eleventh, `nested-checklist-items-and-grid-status-badges`) both follow
+  this exactly, same as every method before them.
 - **EF Core migrations live inside `ManagerPlanner.Core`**, not `.Web` —
   via `PlanningDbContextFactory : IDesignTimeDbContextFactory<PlanningDbContext>`
   in `Core/Data/`. This lets `dotnet ef migrations add`/`database update`
@@ -155,24 +183,32 @@ Accountability — backlog items 6/7/8, still not built) just add another
   directory) — `src/ExecutivePlanning.Core/{Domain,Data,Services}` plus the
   two desktop shells' `ViewModels`/`Views`. The `.specclaw/analysis/*.md`
   docs are prose summaries, not a substitute for it. This has now paid off
-  four times running: a mistyped `User.OwnedTasks` type and missed entity
+  five times running: a mistyped `User.OwnedTasks` type and missed entity
   defaults in item 0; the exact `ProjectSummary.PercentComplete` rounding
   formula in item 1; the real end-to-end `Description`-trimming behavior
-  living in the legacy ViewModel *caller* in `task-management`; and, in
+  living in the legacy ViewModel *caller* in `task-management`; in
   `task-status-transitions`, the exact `ChangeStatusAsync` body, Executive
   Planning Desktop's four-button order/labels, and confirmation (read at
-  both legacy call sites) that neither ever supplies a `Reason` — read the
-  legacy source directly at every layer (entity, service, caller, and UI),
-  not just the layer being ported. (`ui-modernization` is the first change
-  with no legacy-fidelity dimension at all — a pure rendering restyle with
-  no legacy UI framework to port from, since the legacy app is Avalonia
+  both legacy call sites) that neither ever supplies a `Reason`; and, in
+  `nested-checklist-items-and-grid-status-badges`, confirming that the real
+  legacy `GetPlannerForProjectAsync` has the *same* Include-chain gap this
+  rebuild's version has (no `.ThenInclude(c => c.Assignee)` under
+  `Checklist`, so a checklist item's assignee only ever resolves via EF's
+  automatic relationship-fixup) — replicating that gap was the fidelity-
+  correct move, not a bug to fix. Read the legacy source directly at every
+  layer (entity, service, caller, and UI), not just the layer being
+  ported. (`ui-modernization` remains the one change with no
+  legacy-fidelity dimension at all — a pure rendering restyle with no
+  legacy UI framework to port from, since the legacy app is Avalonia
   desktop XAML, not a web component library.)
 - **Multi-collection `Include` chains need `.AsSplitQuery()` once the
   child collections are non-trivial.** Both `GetPlannerForProjectAsync`
   and `GetUngroupedTasksForProjectAsync` carry `.AsSplitQuery()` (the
   latter added during `task-management`'s verify pass, after the build step
   initially added it only to the former) — keep both in sync if either's
-  `Include`/`ThenInclude` shape changes again.
+  `Include`/`ThenInclude` shape changes again. Confirmed still unchanged by
+  `nested-checklist-items-and-grid-status-badges` (no new `ThenInclude` was
+  added for `Checklist.Assignee` — see the Ground-truth pattern above).
 - **A shared row/list-item component is worth extracting the moment two
   render sites in the *same* change need identical markup** — not
   speculatively ahead of need. `TaskRow.razor` was extracted during
@@ -187,7 +223,29 @@ Accountability — backlog items 6/7/8, still not built) just add another
   aggregate state derived elsewhere on the page (the summary's Done/
   InProgress/Blocked/NotStarted/Overdue counts) stays correct immediately,
   not just the row itself. Reuse the full refresh by default for this
-  shape unless it's proven too expensive.
+  shape unless it's proven too expensive. **That shape isn't universal,
+  though**: `nested-checklist-items-and-grid-status-badges`'s
+  `ChecklistTree.razor` deliberately has no `EventCallback` parameter at
+  all — it calls `PlanningService.ToggleChecklistItemAsync` then mutates
+  only its own local `item.IsDone`, because nothing else on the page
+  derives from checklist-completion state. Decide per feature whether a
+  bubble-and-refresh callback is actually needed before wiring one up;
+  don't add it reflexively just because `TaskRow`'s status buttons have
+  one.
+- **Recursive Blazor components for self-similar tree data — one
+  component, not one per depth level.** `ChecklistTree.razor` (new,
+  `nested-checklist-items-and-grid-status-badges`) takes a
+  `List<ChecklistItem> Items` parameter, renders one `MudCheckBox<bool>`
+  per item (label + optional `"— {FullName}"` assignee text), and recurses
+  into `<ChecklistTree Items="item.Children.OrderBy(c =>
+  c.SortOrder).ToList()" />` for any item with children — no hard-coded
+  depth limit, terminates naturally at leaves, mirroring the legacy
+  `RowViewModels.cs`'s own `BuildTree` (`byParent[null].OrderBy(...)` for
+  roots, `byParent[m.Id].OrderBy(...)` recursively for children). It lives
+  directly in `Components/Pages/` alongside `TaskRow.razor` — no new
+  `Shared/` folder was introduced for one component, matching the existing
+  flat layout. Follow this same recursive-component-in-`Pages/` shape for
+  any future self-similar tree UI rather than special-casing depth levels.
 - **`GetCurrentManagerIdAsync()` + a startup Manager-user bootstrap stand in
   for authentication**, which doesn't exist yet. `Program.cs` guarantees
   exactly one `User` with `Role = Manager` on first startup; any feature
@@ -246,7 +304,13 @@ Accountability — backlog items 6/7/8, still not built) just add another
   this is the established default for this project, not a fallback to
   diagnose into. Pair it with a scratch console app (or direct DB
   inspection) querying the live SQLite file when persisted-state evidence
-  from the browser alone is in doubt.
+  from the browser alone is in doubt. **Note:**
+  `nested-checklist-items-and-grid-status-badges` shipped with no such
+  runtime/DB verification artifact despite `tasks.md` calling for one
+  (`verify-report.md`'s sole Issue) — its ACs were instead verified by
+  exact code-level parity against already-tested legacy logic. Prefer
+  actually running the scratch-console/browser check `tasks.md` specifies
+  when a UI change ships without a test project to fall back on.
 - **`tasks.md` line-wrapping silently breaks `specclaw-parse-tasks`** — hit
   twice now (`task-management`'s T2, then `task-status-transitions`'s T2
   again). If a task's title line or `Files:` line wraps across two lines
@@ -261,10 +325,11 @@ Accountability — backlog items 6/7/8, still not built) just add another
 - **No client-local-time concept exists anywhere in this app yet.**
   Deadlines render as UTC `yyyy-MM-dd` (`TaskRow.razor`), not the legacy
   desktop app's local-time `MMM dd` format, and overdue checks already
-  compare purely in UTC (`GetProjectSummaryAsync`). Don't introduce
-  per-feature local-time formatting ad hoc — ADR-0001 left the
-  client-timezone question explicitly open; resolve it once, project-wide,
-  when it's actually decided.
+  compare purely in UTC (`GetProjectSummaryAsync`, and now `TaskRow`'s
+  `IsOverdue` computed property). Don't introduce per-feature local-time
+  formatting ad hoc — ADR-0001 left the client-timezone question
+  explicitly open; resolve it once, project-wide, when it's actually
+  decided.
 
 ## Technology Decisions
 
@@ -279,6 +344,10 @@ Accountability — backlog items 6/7/8, still not built) just add another
   needed no new migration — `StatusChange` and `WorkItem.CompletedUtc`
   already existed in that schema. `ui-modernization` needed no migration
   either — it touches only `.Web`, never `.Core`.
+  `nested-checklist-items-and-grid-status-badges` likewise needed none —
+  `ChecklistItem` and its cascade/`Restrict` rules already existed in
+  `InitialCreate`, independently confirmed at 100% parity against the
+  legacy golden master by the most recent `/specclaw:verify-parity` run.
 - **.NET 8** — matches the legacy solution's target framework exactly, to
   avoid a version gap ahead of future fidelity comparisons.
 - **MudBlazor 9.7.0** as the component/CSS framework (`ui-modernization`)
@@ -295,6 +364,14 @@ Accountability — backlog items 6/7/8, still not built) just add another
   backend's no-external-network-dependency pattern). Version left
   unpinned in the design step by choice but resolved to `9.7.0` at
   restore time and is now pinned in `ManagerPlanner.Web.csproj`.
+- **Badges and other meaning-carrying UI use MudBlazor's semantic `Color`
+  enum, not custom CSS/hex values.** The original color-coded `MudChip`
+  status badge established this; `nested-checklist-items-and-grid-status-badges`
+  extends it to two new `TaskRow` badges — `Color.Error` for the "OVERDUE"
+  caption, `Color.Warning` for the "⚑ discovered" caption — both plain
+  `MudText` components, no custom styling. Reach for MudBlazor's built-in
+  palette (`Color.Error`/`Warning`/`Success`/etc.) for any future
+  meaning-carrying indicator rather than introducing ad hoc colors.
 
 ## Constraints
 
@@ -346,17 +423,52 @@ Accountability — backlog items 6/7/8, still not built) just add another
   embedded-status-buttons-per-row pattern into `MudTable`'s API — a
   full `MudTable` rewrite would be a real, higher-risk restructuring, not
   a drop-in upgrade.
+- **No UI creates or deletes a checklist item, or edits its assignee —
+  `ToggleChecklistItemAsync` is the only checklist mutation that exists.**
+  `nested-checklist-items-and-grid-status-badges` confirmed exactly 11
+  `PlanningService` methods total (10 existing + this one); adding
+  create/delete/assignee-edit for checklist items is a separate,
+  not-yet-decided backlog item, not something to bolt onto `ChecklistTree`
+  incidentally.
+- **Don't add `.ThenInclude(c => c.Assignee)` under the `Checklist`
+  collection in `GetPlannerForProjectAsync`/`GetUngroupedTasksForProjectAsync`
+  to "complete" the Include chain.** The real legacy
+  `GetPlannerForProjectAsync` has the identical gap — a checklist item's
+  `Assignee` resolves only via EF's automatic relationship-fixup, never an
+  explicit `Include` — confirmed by reading the legacy source directly
+  (`ExecutivePlanning.Core/Services/PlanningService.cs:136-142`).
+  Replicating the gap is correct fidelity; "fixing" it would be an
+  unrequested deviation.
 - **`git.strategy: branch-per-change`'s `finalize` step auto-merges the
   feature branch into `master` locally** — it does not leave the branch
   open for a separate GitHub PR. If a real reviewable PR is wanted for a
   future change, that needs deciding *before* running `/specclaw:build`
   (or accept that `/specclaw:pr` will find head==base and a straight
-  `git push` is the only option left). Confirmed a fifth time on
-  `ui-modernization`.
+  `git push` is the only option left). Confirmed a sixth time on
+  `nested-checklist-items-and-grid-status-badges`.
 
 ## Recent Decisions
 
-1. **Global `@rendermode="InteractiveServer"` on `App.razor`'s
+1. **Checklist toggles update local component state only — no
+   `EventCallback`, no `ProjectDetail.RefreshAsync`.** Unlike `TaskRow`'s
+   status buttons (whose `StatusChanged` callback exists because the
+   page's summary counts depend on status), nothing else on the page
+   derives from checklist-completion state, so `ChecklistTree.razor` calls
+   `PlanningService.ToggleChecklistItemAsync` and then just mutates
+   `item.IsDone` locally (nested-checklist-items-and-grid-status-badges,
+   2026-07-31).
+2. **Deliberately did not add `.ThenInclude(c => c.Assignee)` under
+   `Checklist`** — the real legacy `GetPlannerForProjectAsync` has the same
+   gap (assignee resolves only via EF relationship-fixup, never an
+   explicit Include); replicating it is correct fidelity, not a bug to fix
+   (nested-checklist-items-and-grid-status-badges, 2026-07-31).
+3. **`ChecklistTree.razor` is a new recursive component living in
+   `Components/Pages/` next to `TaskRow.razor`** (no new `Shared/` folder
+   for one component) — one `MudCheckBox<bool>` per item, recursing into
+   itself per child level ordered by `SortOrder`, mirroring the legacy
+   `BuildTree`'s own recursive shape
+   (nested-checklist-items-and-grid-status-badges, 2026-07-31).
+4. **Global `@rendermode="InteractiveServer"` on `App.razor`'s
    `<HeadOutlet>`/`<Routes>` replaces per-page render-mode directives
    app-wide** — required for MudBlazor's `MudDialogProvider`/
    `MudPopoverProvider`/`MudSnackbarProvider` to function; every page
@@ -364,25 +476,6 @@ Accountability — backlog items 6/7/8, still not built) just add another
    nothing functional changed, but it removes the "forgetting the per-page
    directive silently breaks clicks" footgun for every future page
    (ui-modernization, 2026-07-28).
-2. **`MudSelect<int?>`'s native `@bind-Value` replaces the manual
-   `OnObjectiveSelected`/`OnAssigneeSelected` `@onchange` handlers**
-   `task-management` had used as a workaround for untrusted nullable
-   `<select>` binding — same fields, same `null`-mapping semantics, dead
-   handler code deleted (ui-modernization, 2026-07-28).
-3. **`MudSimpleTable` wraps the existing Planner Grid table markup
-   as-is, rather than a full `MudTable` rewrite** — resolves the
-   proposal's table-strategy open question in favor of the lower-risk
-   option, since `TaskRow`'s per-row status buttons would need real
-   re-templating work to fit `MudTable`'s data-bound API
-   (ui-modernization, 2026-07-28).
-4. **All four `WorkItemStatus` values are exposed as buttons on every
-   `TaskRow`** ("Not started"/"In progress"/"Blocked"/"Mark done", matching
-   Executive Planning Desktop's order/labels), resolving the proposal's
-   open question against Manager Planner Desktop's Done-only shortcut —
-   every button is the same one-line `ChangeStatusAsync` call, and a
-   Done-only surface would make `Blocked`/`InProgress` permanently
-   unreachable through any UI in the rebuild (task-status-transitions,
-   2026-07-28).
 5. **No `Reason` input and no confirmation dialog for status changes** —
    confirmed by reading both legacy call sites directly; neither ever
    supplies a `Reason` or shows a confirmation before a status change
