@@ -34,3 +34,7 @@
 ## Issues
 
 1. **AC2/AC3 verified by code reading, not a live runtime/DB check.** No test project exists for `ManagerPlanner.Core`/`.Web` in this repo; the verify agent confirmed the persisted-row/no-op-on-empty-title behavior by tracing the exact code path rather than running the app. Matches this project's established precedent for prior UI-only changes (e.g. `nested-checklist-items-and-grid-status-badges`'s own verify report). Not blocking — flagged for anyone wanting stronger runtime assurance later.
+
+## PR
+
+**No PR was created** — `/specclaw:pr` failed with "head branch \"master\" is the same as base branch \"master\", cannot create a pull request," the same known `git.strategy: branch-per-change`/`finalize` limitation confirmed a seventh time running. `specclaw-pr`'s own `git push` step ran regardless and succeeded — the change is live on `origin/master` as of commit `a84259d` (code + verify) and `ba7db4b` (context.md update).
