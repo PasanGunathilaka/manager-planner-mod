@@ -1,0 +1,17 @@
+{
+  "scenario_id": "GM-038",
+  "captured_at": "2026-07-30T09:05:36.9222237Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "totalTasks": 80,
+    "doneTasks": 1
+  },
+  "output": {
+    "TotalTasks": 80,
+    "Done": 1,
+    "PercentComplete": 1.2
+  }
+}

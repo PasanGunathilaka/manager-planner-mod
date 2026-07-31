@@ -1,0 +1,21 @@
+{
+  "scenario_id": "GM-013",
+  "captured_at": "2026-07-30T09:05:37.6287795Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [
+    "output.completedUtc"
+  ],
+  "input": {
+    "anchorDate": "2026-07-30",
+    "promisedDate": "2026-07-30T00:00:00.0000000Z"
+  },
+  "output": {
+    "PromiseKept": true,
+    "PromiseBroken": false,
+    "IsOverdue": false,
+    "Verdict": "Kept promise",
+    "completedUtc": "2026-07-30T09:05:37.6270270Z"
+  }
+}

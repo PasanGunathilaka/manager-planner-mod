@@ -1,0 +1,23 @@
+{
+  "scenario_id": "GM-041",
+  "captured_at": "2026-07-30T09:05:36.9011236Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "startedFromEmptyDatabase": true
+  },
+  "output": {
+    "seeded": true,
+    "shape": {
+      "users": 6,
+      "projects": 3,
+      "anyDiscoveredWorkItem": true,
+      "anyPromiseNote": true,
+      "anyObjective": true,
+      "anyNestedChecklistItem": true,
+      "anyTaskOwner": true
+    }
+  }
+}

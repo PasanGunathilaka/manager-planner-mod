@@ -1,0 +1,36 @@
+{
+  "scenario_id": "GM-004",
+  "captured_at": "2026-07-30T09:05:34.8249718Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "whitespace": "   ",
+    "exact300Length": 300,
+    "over301Length": 301
+  },
+  "output": {
+    "whitespace": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "Checklist item cannot be empty.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "exact300": {
+      "Threw": false,
+      "ExceptionType": null,
+      "Message": null,
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "over301": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "Checklist item is too long. Keep it to 300 characters.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    }
+  }
+}

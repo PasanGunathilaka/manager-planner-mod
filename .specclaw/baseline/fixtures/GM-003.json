@@ -1,0 +1,36 @@
+{
+  "scenario_id": "GM-003",
+  "captured_at": "2026-07-30T09:05:34.1720685Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "whitespace": "   ",
+    "exact150Length": 150,
+    "over151Length": 151
+  },
+  "output": {
+    "whitespace": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "Objective title cannot be empty.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "exact150": {
+      "Threw": false,
+      "ExceptionType": null,
+      "Message": null,
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "over151": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "Objective title is too long (151). Keep it to 150 characters.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    }
+  }
+}

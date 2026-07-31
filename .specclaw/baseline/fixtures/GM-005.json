@@ -1,0 +1,36 @@
+{
+  "scenario_id": "GM-005",
+  "captured_at": "2026-07-30T09:05:34.4671713Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "whitespace": "   ",
+    "exact2000Length": 2000,
+    "over2001Length": 2001
+  },
+  "output": {
+    "whitespace": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "The note is empty \u2014 type what was said before saving.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "exact2000": {
+      "Threw": false,
+      "ExceptionType": null,
+      "Message": null,
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "over2001": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "The note is too long. Keep it under 2000 characters.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    }
+  }
+}

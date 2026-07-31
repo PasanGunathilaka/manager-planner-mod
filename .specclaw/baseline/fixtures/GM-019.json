@@ -1,0 +1,15 @@
+{
+  "scenario_id": "GM-019",
+  "captured_at": "2026-07-30T09:05:37.3598622Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "fromStatus": "NotStarted",
+    "toStatus": "NotStarted"
+  },
+  "output": {
+    "statusHistoryCount": 0
+  }
+}

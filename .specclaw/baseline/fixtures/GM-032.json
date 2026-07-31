@@ -1,0 +1,37 @@
+{
+  "scenario_id": "GM-032",
+  "captured_at": "2026-07-30T09:05:38.0981931Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "parentChecklistItemId": 1,
+    "childChecklistItemId": 2
+  },
+  "output": {
+    "freshContextAttempt": {
+      "result": {
+        "Threw": true,
+        "ExceptionType": "Microsoft.EntityFrameworkCore.DbUpdateException",
+        "Message": "An error occurred while saving the entity changes. See the inner exception for details.",
+        "InnerExceptionType": "Microsoft.Data.Sqlite.SqliteException",
+        "InnerExceptionMessage": "SQLite Error 19: \u0027FOREIGN KEY constraint failed\u0027."
+      },
+      "parentSurvives": true,
+      "childSurvives": true
+    },
+    "sameContextAttempt": {
+      "result": {
+        "Threw": false,
+        "ExceptionType": null,
+        "Message": null,
+        "InnerExceptionType": null,
+        "InnerExceptionMessage": null
+      },
+      "parentSurvives": false,
+      "childSurvives": true,
+      "childParentIdAfter": null
+    }
+  }
+}

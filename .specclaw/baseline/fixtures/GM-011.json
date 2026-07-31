@@ -1,0 +1,17 @@
+{
+  "scenario_id": "GM-011",
+  "captured_at": "2026-07-30T09:05:34.5829809Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "PromiseKept": false,
+    "PromiseBroken": false,
+    "IsOverdue": false,
+    "latestPromisedDate": "2099-01-01T00:00:00.0000000"
+  },
+  "output": {
+    "verdict": "Promise pending"
+  }
+}

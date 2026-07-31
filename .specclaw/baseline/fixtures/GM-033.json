@@ -1,0 +1,16 @@
+{
+  "scenario_id": "GM-033",
+  "captured_at": "2026-07-30T09:05:37.1220412Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "ownerOnlyUserId": 3,
+    "taskId": 1
+  },
+  "output": {
+    "taskSurvives": true,
+    "ownershipRowSurvives": false
+  }
+}

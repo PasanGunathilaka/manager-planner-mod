@@ -1,0 +1,29 @@
+{
+  "scenario_id": "GM-006",
+  "captured_at": "2026-07-30T09:05:34.3659351Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "nowUtc": "2026-07-30T00:00:00.0000000Z",
+    "earliest": "2026-06-30T00:00:00.0000000Z",
+    "oneDayEarlier": "2026-06-29T00:00:00.0000000Z"
+  },
+  "output": {
+    "atEarliest": {
+      "Threw": false,
+      "ExceptionType": null,
+      "Message": null,
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "oneDayEarlier": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "That date is more than a month back. Notes can only be dated on or after Jun 30, 2026.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    }
+  }
+}

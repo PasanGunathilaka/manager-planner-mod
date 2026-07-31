@@ -1,0 +1,29 @@
+{
+  "scenario_id": "GM-007",
+  "captured_at": "2026-07-30T09:05:34.7086877Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "nowUtc": "2026-07-30T00:00:00.0000000Z",
+    "today": "2026-07-30T00:00:00.0000000Z",
+    "tomorrow": "2026-07-31T00:00:00.0000000Z"
+  },
+  "output": {
+    "today": {
+      "Threw": false,
+      "ExceptionType": null,
+      "Message": null,
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "tomorrow": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "A note cannot be dated in the future.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    }
+  }
+}

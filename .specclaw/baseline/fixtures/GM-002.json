@@ -1,0 +1,36 @@
+{
+  "scenario_id": "GM-002",
+  "captured_at": "2026-07-30T09:05:33.8694986Z",
+  "anchor_date": "2026-07-30",
+  "legacy_commit_sha": "0db0b01",
+  "runtime_version": "8.0.29",
+  "normalized_fields": [],
+  "input": {
+    "whitespace": "   ",
+    "exact120Length": 120,
+    "over121Length": 121
+  },
+  "output": {
+    "whitespace": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "Task title cannot be empty.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "exact120": {
+      "Threw": false,
+      "ExceptionType": null,
+      "Message": null,
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    },
+    "over121": {
+      "Threw": true,
+      "ExceptionType": "ExecutivePlanning.Core.Services.ValidationException",
+      "Message": "Task title is too long (121). Keep it to 120 characters.",
+      "InnerExceptionType": null,
+      "InnerExceptionMessage": null
+    }
+  }
+}

@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0: matches the legacy ExecutivePlanning.Core.csproj's own TargetFramework exactly
+         (read directly at ../../../../manager-planner/src/ExecutivePlanning.Core/ExecutivePlanning.Core.csproj),
+         not guessed. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <!-- No extra_package_references needed: Microsoft.Data.Sqlite / Microsoft.EntityFrameworkCore
+         flow transitively through the ProjectReference below, exactly the way the legacy repo's
+         own tests/ExecutivePlanning.Tests.csproj already relies on the same transitive flow from
+         ExecutivePlanning.Core.csproj's single PackageReference
+         (Microsoft.EntityFrameworkCore.Sqlite 8.0.11, no PrivateAssets="all") — confirmed by
+         reading both .csproj files directly, not assumed. -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference the legacy app's core/domain library directly. Never reference a UI project
+         (ExecutivePlanning.Desktop / ManagerPlanner.Desktop) — the harness captures behavior at
+         the PlanningService/PlanningRules/Reports/PlanningDbContext seam identified in seams.md,
+         not through any UI.
+
+         This harness project lives in a different repo (manager-planner-mod) than the legacy
+         source it exercises (manager-planner) — the two are sibling directories on disk today
+         (C:\Learnings\Projects\manager-planner-mod and C:\Learnings\Projects\manager-planner;
+         confirmed directly, and consistent with this project's own MEMORY.md note that "real
+         legacy source is on disk at ../manager-planner, not just doc summaries"). A relative
+         ProjectReference is used, tied to that sibling-checkout convention; see this project's
+         README.md for the rationale and the fallback if that convention ever breaks. -->
+    <ProjectReference Include="..\..\..\..\manager-planner\src\ExecutivePlanning.Core\ExecutivePlanning.Core.csproj" />
+  </ItemGroup>
+
+</Project>
