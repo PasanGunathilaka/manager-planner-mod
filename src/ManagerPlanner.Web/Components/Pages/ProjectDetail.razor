@@ -175,6 +175,73 @@ else
             </tbody>
         </MudSimpleTable>
     }
+
+    <MudText Typo="Typo.h5">Meetings</MudText>
+
+    @if (!string.IsNullOrEmpty(_meetingErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error">@_meetingErrorMessage</MudAlert>
+    }
+
+    <EditForm Model="this" OnValidSubmit="AddMeetingAsync">
+        <div>
+            <MudTextField @bind-Value="_newMeetingTitle" Label="Title" />
+        </div>
+        <div>
+            <MudSelect T="MeetingType" @bind-Value="_newMeetingType" Label="Type">
+                @foreach (var type in Enum.GetValues<MeetingType>())
+                {
+                    <MudSelectItem Value="@type">@type</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+        <div>
+            <MudSelect T="int?" @bind-Value="_newMeetingParticipantId" Label="Participant">
+                <MudSelectItem Value="@((int?)null)">&mdash; No participant &mdash;</MudSelectItem>
+                @foreach (var member in _teamMembers ?? new List<User>())
+                {
+                    <MudSelectItem Value="@((int?)member.Id)">@member.FullName</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+        <div>
+            <MudDatePicker @bind-Date="_newMeetingDate" Label="Date" />
+        </div>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Record meeting</MudButton>
+    </EditForm>
+
+    @if (_meetings is null)
+    {
+        <p>Loading meetings&hellip;</p>
+    }
+    else if (_meetings.Count == 0)
+    {
+        <MudText>No meetings yet.</MudText>
+    }
+    else
+    {
+        <MudSimpleTable Hover="true" Dense="true">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Participant</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var meeting in _meetings)
+                {
+                    <tr>
+                        <td>@meeting.Title</td>
+                        <td>@meeting.Type</td>
+                        <td>@meeting.MeetingDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(meeting.Participant?.FullName ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
 }
 
 @code {
@@ -196,12 +263,20 @@ else
     private bool _newTaskIsDiscovered;
     private string? _taskErrorMessage;
 
+    private List<Meeting>? _meetings;
+    private string _newMeetingTitle = string.Empty;
+    private MeetingType _newMeetingType = MeetingType.VideoCall;
+    private int? _newMeetingParticipantId;
+    private DateTime? _newMeetingDate;
+    private string? _meetingErrorMessage;
+
     protected override async Task OnInitializedAsync()
     {
         _summary = await PlanningService.GetProjectSummaryAsync(Id);
         _objectives = await PlanningService.GetPlannerForProjectAsync(Id);
         _teamMembers = await PlanningService.GetTeamMembersAsync();
         _ungroupedTasks = await PlanningService.GetUngroupedTasksForProjectAsync(Id);
+        _meetings = await PlanningService.GetMeetingsForProjectAsync(Id);
     }
 
     private async Task RefreshAsync()
@@ -210,6 +285,7 @@ else
         _objectives = await PlanningService.GetPlannerForProjectAsync(Id);
         _teamMembers = await PlanningService.GetTeamMembersAsync();
         _ungroupedTasks = await PlanningService.GetUngroupedTasksForProjectAsync(Id);
+        _meetings = await PlanningService.GetMeetingsForProjectAsync(Id);
     }
 
     private async Task AddObjectiveAsync()
@@ -262,5 +338,32 @@ else
         {
             _taskErrorMessage = ex.Message;
         }
+    }
+
+    private async Task AddMeetingAsync()
+    {
+        // Matches the legacy MainWindowViewModel.AddMeetingAsync's pre-processing exactly:
+        // the empty-title check and trimming happen at the caller, since the service
+        // itself performs no validation.
+        if (string.IsNullOrWhiteSpace(_newMeetingTitle))
+        {
+            _meetingErrorMessage = "Enter a meeting title.";
+            return;
+        }
+
+        await PlanningService.AddMeetingAsync(
+            Id,
+            _newMeetingTitle.Trim(),
+            _newMeetingType,
+            _newMeetingDate ?? DateTime.UtcNow,
+            _newMeetingParticipantId);
+
+        _newMeetingTitle = string.Empty;
+        _newMeetingType = MeetingType.VideoCall;
+        _newMeetingParticipantId = null;
+        _newMeetingDate = null;
+        _meetingErrorMessage = null;
+
+        _meetings = await PlanningService.GetMeetingsForProjectAsync(Id);
     }
 }

@@ -40,7 +40,7 @@ out of scope per spec.md NFR2/AC8.
 
 ### Wave 2 — Page + verification
 
-- [ ] `T2` — "Meetings" section on `ProjectDetail.razor`: record form, history list, end-to-end verification
+- [x] `T2` — "Meetings" section on `ProjectDetail.razor`: record form, history list, end-to-end verification
   - Files: `src/ManagerPlanner.Web/Components/Pages/ProjectDetail.razor`
   - Estimate: medium
   - Depends: `T1`
