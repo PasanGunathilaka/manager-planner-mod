@@ -188,4 +188,31 @@ public class PlanningService
 
         await db.SaveChangesAsync();
     }
+
+    public async Task<List<Meeting>> GetMeetingsForProjectAsync(int projectId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Meetings
+            .Include(m => m.Participant)
+            .Where(m => m.ProjectId == projectId)
+            .OrderByDescending(m => m.MeetingDate)
+            .ToListAsync();
+    }
+
+    public async Task<Meeting> AddMeetingAsync(int projectId, string title, MeetingType type,
+        DateTime meetingDate, int? participantId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var meeting = new Meeting
+        {
+            ProjectId = projectId,
+            Title = title,
+            Type = type,
+            MeetingDate = meetingDate,
+            ParticipantId = participantId
+        };
+        db.Meetings.Add(meeting);
+        await db.SaveChangesAsync();
+        return meeting;
+    }
 }
