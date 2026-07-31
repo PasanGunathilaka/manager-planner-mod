@@ -134,18 +134,20 @@ public static class Program
         // ================= MOD03: PlanningService (methods that actually exist) =================
         // Not-implemented: HasAnyData, LoadSampleDataIfEmpty, ResetSampleData, GetUsersAsync,
         // AddUserAsync, DeleteProjectAsync, DeleteTaskAsync, GetTasksForProjectAsync, GetTaskAsync,
-        // GetObjectivesForProjectAsync, AddChecklistItemAsync, ToggleChecklistItemAsync,
+        // GetObjectivesForProjectAsync, AddChecklistItemAsync,
         // SetOwnersAsync, GetMeetingsForProjectAsync, AddMeetingAsync, AddNoteAsync,
         // GetNotesForTaskAsync, GetAccountabilityReportAsync, GetAccountabilityForAllProjectsAsync
         // -- none of these exist anywhere in ManagerPlanner.Core.Services.PlanningService (confirmed
         // by grep across the whole project).
+        // ToggleChecklistItemAsync now exists (added by nested-checklist-items-and-grid-status-badges,
+        // 2026-07-31) -- dispatched for real below, C042-C044.
         foreach (var id in new[]
                  {
                      "C001", "C002", "C003", "C004", "C005", "C006", "C007", "C008",
                      "C011", "C012", "C013", "C014",
                      "C020", "C021", "C022", "C023", "C024", "C025", "C026", "C027",
                      "C032", "C033",
-                     "C039", "C040", "C041", "C042", "C043", "C044", "C045", "C046", "C047",
+                     "C039", "C040", "C041", "C045", "C046", "C047",
                      "C056", "C057", "C058", "C059", "C060", "C061", "C062", "C063", "C064", "C065",
                      "C066", "C067",
                      "C068", "C069", "C070", "C071", "C072", "C073", "C074", "C075", "C076", "C077",
@@ -454,6 +456,56 @@ public static class Program
             var task = await svc.AddTaskAsync(projectId, "T", null, null, null);
             await svc.ChangeStatusAsync(task.Id, WorkItemStatus.InProgress, 999999);
             return "unreachable";
+        });
+
+        // ---- C042-C044: ToggleChecklistItemAsync ----
+        await Exec("MOD03-C042", async () =>
+        {
+            using var t = new TestDb();
+            var svc = new PlanningService(t);
+            await svc.ToggleChecklistItemAsync(999999, true);
+            return "unreachable";
+        });
+
+        await Exec("MOD03-C043", async () =>
+        {
+            using var t = new TestDb();
+            var svc = new PlanningService(t);
+            var (ownerId, projectId) = await SeedManagerAndProject(t, "chk1@t.local");
+            var task = await svc.AddTaskAsync(projectId, "T", null, null, null);
+            int itemId;
+            using (var db = t.NewContext())
+            {
+                var item = new ChecklistItem { WorkItemId = task.Id, Label = "Step 1", IsDone = false, SortOrder = 0 };
+                db.ChecklistItems.Add(item);
+                await db.SaveChangesAsync();
+                itemId = item.Id;
+            }
+            await svc.ToggleChecklistItemAsync(itemId, true);
+            using var db2 = t.NewContext();
+            var reloaded = await db2.ChecklistItems.FirstAsync(c => c.Id == itemId);
+            return new { IsDone = reloaded.IsDone, CompletedUtcIsNull = reloaded.CompletedUtc == null };
+        });
+
+        await Exec("MOD03-C044", async () =>
+        {
+            using var t = new TestDb();
+            var svc = new PlanningService(t);
+            var (ownerId, projectId) = await SeedManagerAndProject(t, "chk2@t.local");
+            var task = await svc.AddTaskAsync(projectId, "T", null, null, null);
+            int itemId;
+            using (var db = t.NewContext())
+            {
+                var item = new ChecklistItem { WorkItemId = task.Id, Label = "Step 1", IsDone = false, SortOrder = 0 };
+                db.ChecklistItems.Add(item);
+                await db.SaveChangesAsync();
+                itemId = item.Id;
+            }
+            await svc.ToggleChecklistItemAsync(itemId, true);
+            await svc.ToggleChecklistItemAsync(itemId, false);
+            using var db2 = t.NewContext();
+            var reloaded = await db2.ChecklistItems.FirstAsync(c => c.Id == itemId);
+            return new { IsDone = reloaded.IsDone, CompletedUtcIsNull = reloaded.CompletedUtc == null };
         });
 
         // ---- C086-C090: GetProjectSummaryAsync ----

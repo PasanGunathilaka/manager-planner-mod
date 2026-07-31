@@ -5,33 +5,36 @@ Matrix: .specclaw/matrix-inputs.json
 
 ## Summary
 - Total cases evaluated: 181
-- Matches: 77
-- Discrepancies: 104
-- Match percentage: 42.54%
+- Matches: 80
+- Discrepancies: 101
+- Match percentage: 44.20%
 - Status: BLOCKED
 
 ## Method used
-A disposable console-app harness was built at `.specclaw/parity-harness/` (`ParityHarness.csproj`,
-referencing `src/ManagerPlanner.Core/ManagerPlanner.Core.csproj` via `<ProjectReference>`, plus
-`Program.cs` and `TestDb.cs`), following the `.specclaw/baseline/harness/` precedent. It:
-- Calls the modern `PlanningRules` validators directly for all 48 MOD01 cases (no DB).
-- Constructs `ProjectSummary` POCOs directly for the 9 testable MOD02 cases (no DB).
-- Arranges a fresh in-memory SQLite `PlanningDbContext` per case (via an
-  `IDbContextFactory<PlanningDbContext>` wrapper, `TestDb.cs`) and drives the real
-  `PlanningService` method for the 29 MOD03 cases whose target method actually exists in the
-  modern codebase.
-- Manipulates `PlanningDbContext` directly (no service method involved, matching how the matrix
-  itself frames MOD04) for all 12 MOD04 cascade/SetNull/Restrict cases.
-- Emits every case's real captured result (value, or exception type + exact message) to
-  `.specclaw/parity-harness/modern-results.json`; every case in this report's Discrepancies table
-  is backed by an actually-executed result in that file, not a guess.
-- Cases whose target method/class does not exist anywhere in `src/ManagerPlanner.Core` (confirmed
-  by direct source reads and project-wide grep, not assumed) are recorded with modern output
-  `(not implemented in modern codebase)` per the task's instructions, rather than invented or
-  stubbed.
+Re-ran the existing disposable console-app harness at `.specclaw/parity-harness/`
+(`ParityHarness.csproj`, referencing `src/ManagerPlanner.Core/ManagerPlanner.Core.csproj` via
+`<ProjectReference>`), updated for the one relevant change since the prior run: the
+`nested-checklist-items-and-grid-status-badges` change added `PlanningService.
+ToggleChecklistItemAsync`, previously recorded as not-implemented. Verified first (via `git diff`
+against the commit the prior audit ran against) that no other file relevant to this matrix —
+`PlanningValidation.cs`, `Reports.cs`, `PlanningDbContext.cs`, or any other `PlanningService` method
+— changed in between, so every other case's result is carried forward unchanged from the prior
+audit rather than re-executed redundantly. Added real dispatch for the three
+`ToggleChecklistItemAsync` cases (`MOD03-C042/C043/C044`) to `Program.cs`: `C042` calls it with a
+nonexistent `itemId` directly (no arrange needed); `C043`/`C044` seed a `WorkItem` via the real
+`AddTaskAsync` plus a directly-inserted `ChecklistItem` (no `AddChecklistItemAsync` exists to do
+this via the service, matching the prior audit's own established pattern for other DB-arranged
+cases), then call the real `ToggleChecklistItemAsync` and reload from a fresh context to inspect
+persisted state. Build and run both succeeded cleanly (`dotnet build` / `dotnet run`, 0 warnings,
+0 errors, 181/181 case results written to `.specclaw/parity-harness/modern-results.json`).
 
-Build and run both succeeded cleanly (`dotnet build` / `dotnet run`, 0 warnings, 0 errors, 181/181
-case results written).
+All three newly-dispatched cases matched the golden master exactly:
+- `MOD03-C042`: `InvalidOperationException` — `"Checklist item 999999 not found."`, byte-identical
+  to the golden master (unsurprising, since the ported method's not-found branch is a verbatim copy
+  of the legacy source).
+- `MOD03-C043`: `{"IsDone":true,"CompletedUtcIsNull":false}`, exact match.
+- `MOD03-C044`: `{"IsDone":false,"CompletedUtcIsNull":true}`, exact match — confirms the symmetric
+  clearing-to-null half of the same line.
 
 ## Discrepancies
 (sorted by module, then case_id ascending; placeholder shorthand like `<121 'a' chars>` is carried
@@ -94,9 +97,6 @@ the actual harness inputs)
 | MOD03-C039 | `AddChecklistItemAsync {"existingItemsForTask":0}` | 0 | (not implemented in modern codebase) | not implemented |
 | MOD03-C040 | `AddChecklistItemAsync {"parentId":"<valid>"}` | `{"ParentId":1,"ExpectedParentId":1}` | (not implemented in modern codebase) | not implemented |
 | MOD03-C041 | `AddChecklistItemAsync {"parentId":999999}` | exception: DbUpdateException (FK constraint) | (not implemented in modern codebase) | not implemented |
-| MOD03-C042 | `ToggleChecklistItemAsync {"itemId":999999,"isDone":true}` | exception: "Checklist item 999999 not found." | (not implemented in modern codebase) | not implemented |
-| MOD03-C043 | `ToggleChecklistItemAsync {"isDone":true}` | `{"IsDone":true,"CompletedUtcIsNull":false}` | (not implemented in modern codebase) | not implemented |
-| MOD03-C044 | `ToggleChecklistItemAsync {"isDone":false,"priorState":"toggled true first"}` | `{"IsDone":false,"CompletedUtcIsNull":true}` | (not implemented in modern codebase) | not implemented |
 | MOD03-C045 | `SetOwnersAsync {"firstCall":[member,manager],"secondCall":[member]}` | `[2]` | (not implemented in modern codebase) | not implemented |
 | MOD03-C046 | `SetOwnersAsync {"userIds":[member,member,manager]}` | `{"Count":2,"Owners":[1,2]}` | (not implemented in modern codebase) | not implemented |
 | MOD03-C047 | `SetOwnersAsync {"userIds":[]}` | 0 | (not implemented in modern codebase) | not implemented |
@@ -152,6 +152,17 @@ None. Verified programmatically: the set of `case_id` values in `matrix-inputs.j
 
 ## Notes
 
+**What changed since the prior run:** the `nested-checklist-items-and-grid-status-badges` change
+added `PlanningService.ToggleChecklistItemAsync`, ported verbatim from the legacy source. All three
+of its matrix cases (`MOD03-C042/C043/C044`) now match the golden master exactly — the not-found
+exception message, the `IsDone`/`CompletedUtc`-set-on-true behavior, and the symmetric
+`CompletedUtc`-cleared-on-false behavior. This moves 3 cases from "not implemented" to "match":
+77 → 80 matches, 42.54% → 44.20%. Nothing else in the modern codebase changed (confirmed via `git
+diff` against the prior audit's commit for `PlanningValidation.cs`, `Reports.cs`,
+`PlanningDbContext.cs`, and the rest of `PlanningService.cs` — zero differences besides the new
+method's own addition), so every other case's result below is carried forward unchanged, not
+guessed or re-derived.
+
 **Module-level results:**
 - **MOD01 (`PlanningRules` / legacy `PlanningValidation`)** — 27/48 match, 21/48 discrepancies.
   Every boundary/length threshold (120/120/150/300/2000 chars, 1-month backdate window) is an
@@ -162,7 +173,7 @@ None. Verified programmatically: the set of `case_id` values in `matrix-inputs.j
   exceed 120 characters." with the actual violating length no longer interpolated at all;
   `ValidateNoteDate`'s too-old message no longer embeds the computed earliest-allowed date). This
   is a systemic, codebase-wide rewording across all 5 validators plus the date rule — not an
-  isolated defect in one method.
+  isolated defect in one method. Unchanged since the prior audit.
 - **MOD01-C046**: golden master's captured `output` field is
   `"no exception (validation passed); earliest=2024-02-29"` — the `; earliest=...` suffix is
   extraction-tooling commentary about the internal `AddMonths(-1)` leap-day-clamp calculation, not
@@ -178,27 +189,28 @@ None. Verified programmatically: the set of `case_id` values in `matrix-inputs.j
   `AccountabilityRow` class (with its `Verdict` computed property) **does not exist anywhere** in
   `src/ManagerPlanner.Core` (confirmed by project-wide grep for `AccountabilityRow`, `Verdict`,
   `PromiseKept`, `PromiseBroken`, `IsOverdue` — zero matches) — all 8 `Verdict`-precedence cases are
-  not implemented.
-- **MOD03 (`PlanningService`)** — 29/90 match, 61/90 discrepancies. The modern `PlanningService`
-  has only **10 public methods** total (`GetProjectsAsync`, `AddProjectAsync`,
-  `GetProjectSummaryAsync`, `GetCurrentManagerIdAsync`, `AddObjectiveAsync`,
-  `GetPlannerForProjectAsync`, `AddTaskAsync`, `GetTeamMembersAsync`,
-  `GetUngroupedTasksForProjectAsync`, `ChangeStatusAsync`) — confirmed by reading the file and
-  cross-checked with `grep` for every other legacy method name across the whole project (zero
-  matches for all of them). This is a substantially larger gap than the task brief's own estimate
-  of "likely MOD03-C001 through C006" (the DbSeeder wrapper methods): **also missing** are
-  `GetUsersAsync`, `AddUserAsync`, `DeleteProjectAsync`, `DeleteTaskAsync`,
+  not implemented. Unchanged since the prior audit.
+- **MOD03 (`PlanningService`)** — 32/90 match, 58/90 discrepancies (up from 29/61 — the 3
+  `ToggleChecklistItemAsync` cases now match). The modern `PlanningService` has **11 public
+  methods** total (`GetProjectsAsync`, `AddProjectAsync`, `GetProjectSummaryAsync`,
+  `GetCurrentManagerIdAsync`, `AddObjectiveAsync`, `GetPlannerForProjectAsync`, `AddTaskAsync`,
+  `GetTeamMembersAsync`, `GetUngroupedTasksForProjectAsync`, `ChangeStatusAsync`, and now
+  `ToggleChecklistItemAsync`) — confirmed by reading the file directly. Still missing, confirmed by
+  `grep` for every other legacy method name across the whole project (zero matches for all of
+  them): `GetUsersAsync`, `AddUserAsync`, `DeleteProjectAsync`, `DeleteTaskAsync`,
   `GetTasksForProjectAsync`, `GetTaskAsync`, `GetObjectivesForProjectAsync`,
-  `AddChecklistItemAsync`, `ToggleChecklistItemAsync`, `SetOwnersAsync`,
-  `GetMeetingsForProjectAsync`, `AddMeetingAsync`, `AddNoteAsync`, `GetNotesForTaskAsync`,
-  `GetAccountabilityReportAsync`, and `GetAccountabilityForAllProjectsAsync` — meaning Meetings,
-  ProgressNotes, ChecklistItem add/toggle, TaskOwner management, and the entire Accountability
-  reporting feature have no service-layer entry point in the modern codebase at all yet, even
-  though their underlying domain entities (`Meeting`, `ProgressNote`, `ChecklistItem`, `TaskOwner`,
-  `StatusChange`) and DB schema all exist. Every one of the 29 cases whose target method **does**
-  exist matched the golden master exactly (list ordering including unspecified-tie insertion order,
-  FK-violation exception type/message/inner-message, trimming, SortOrder counting, status-history
-  bookkeeping, and the `GetProjectSummaryAsync` aggregate counts) — the ported subset is faithful.
+  `AddChecklistItemAsync`, `SetOwnersAsync`, `GetMeetingsForProjectAsync`, `AddMeetingAsync`,
+  `AddNoteAsync`, `GetNotesForTaskAsync`, `GetAccountabilityReportAsync`, and
+  `GetAccountabilityForAllProjectsAsync` — meaning Meetings, ProgressNotes, new-checklist-item
+  creation, TaskOwner management, and the entire Accountability reporting feature still have no
+  service-layer entry point in the modern codebase, even though their underlying domain entities
+  (`Meeting`, `ProgressNote`, `ChecklistItem`, `TaskOwner`, `StatusChange`) and DB schema all exist.
+  Every one of the 32 cases whose target method **does** exist matched the golden master exactly
+  (list ordering including unspecified-tie insertion order, FK-violation exception type/message/
+  inner-message, trimming, SortOrder counting, status-history bookkeeping, the
+  `GetProjectSummaryAsync` aggregate counts, and now `ToggleChecklistItemAsync`'s not-found
+  exception and completion-timestamp stamp/clear behavior) — the ported subset remains fully
+  faithful.
 - **MOD03-C029** (`AddTaskAsync` with `isDiscovered=true`): matched the golden master's output
   values, but only because the modern `AddTaskAsync` signature has **no `discoveredInMeetingId`
   parameter at all** (legacy: `AddTaskAsync(..., bool isDiscovered, int? discoveredInMeetingId)`;
@@ -208,7 +220,7 @@ None. Verified programmatically: the set of `case_id` values in `matrix-inputs.j
   this specific case's expected output. This is a real, narrower API surface than the legacy
   method (there is currently no way to link a discovered task back to the meeting it was discovered
   in through this service), flagged here for visibility even though it did not register as a
-  case-level discrepancy.
+  case-level discrepancy. Unchanged since the prior audit.
 - **MOD04 (`PlanningDbContext`)** — **12/12 match, 0 discrepancies.** Every Cascade/SetNull/Restrict
   rule reproduced exactly, including the two subtle EF Core behavioral nuances the matrix
   specifically targets: the client-side `InvalidOperationException` for required-FK Restrict
@@ -217,19 +229,21 @@ None. Verified programmatically: the set of `case_id` values in `matrix-inputs.j
   the optional self-referencing `ChecklistItem.Parent` Restrict rule (MOD04-C009 succeeds silently
   via client-side fixup; MOD04-C012 throws the real `DbUpdateException`/`SqliteException` FK
   message) — both halves reproduced exactly. The relational schema migration is fully faithful.
+  Unchanged since the prior audit (this change touched no schema/`DbContext` code).
 - **MOD05 (`DbSeeder`)** — 0/14 match, 14/14 discrepancies. Confirmed (as anticipated by the task
   brief) that no `DbSeeder` class, nor any seed-related method, exists anywhere in
-  `src/ManagerPlanner.Core`.
+  `src/ManagerPlanner.Core`. Unchanged since the prior audit.
 - **MOD04-C010 arrangement caveat**: this case's golden output includes a specific numeric
   `UsersCountAfter: 2`. The harness's arrangement (Manager + Member + one TaskOwner-only user, then
   removing the TaskOwner-only user) was inferred from the case's own rationale text and the
   `.specclaw/baseline/harness/Arrange.cs` precedent's "Manager+Member+Project" baseline pattern
   (not verified against the actual legacy test source, which was not opened for this audit) — it
   happened to reproduce the golden count exactly, but flagging the inference for transparency.
+  Unchanged since the prior audit.
 
-**Overall:** the ported subset of both `PlanningRules`' boundary logic and `PlanningDbContext`'s
-relational integrity rules is exact. The two categories of failure are (1) a wholesale rewording of
-every validation exception message (MOD01, 21 cases) and (2) a much-larger-than-expected missing
-surface area of `PlanningService` methods and the `AccountabilityRow` type (MOD02 + MOD03, 69 cases
-combined) plus the entirely-absent `DbSeeder` (MOD05, 14 cases) — 104 discrepancies total, forcing
-`BLOCKED`.
+**Overall:** the ported subset of `PlanningRules`' boundary logic, `PlanningDbContext`'s relational
+integrity rules, and now `ToggleChecklistItemAsync` is exact. The two categories of failure remain
+unchanged in kind, only smaller in the MOD03 count: (1) a wholesale rewording of every validation
+exception message (MOD01, 21 cases) and (2) a still-substantial missing surface area of
+`PlanningService` methods and the `AccountabilityRow` type (MOD02 + MOD03, 66 cases combined) plus
+the entirely-absent `DbSeeder` (MOD05, 14 cases) — 101 discrepancies total, still forcing `BLOCKED`.
