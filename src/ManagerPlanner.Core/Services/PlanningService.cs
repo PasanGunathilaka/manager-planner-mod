@@ -176,4 +176,16 @@ public class PlanningService
         db.StatusChanges.Add(change);
         await db.SaveChangesAsync();
     }
+
+    public async Task ToggleChecklistItemAsync(int itemId, bool isDone)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var item = await db.ChecklistItems.FirstOrDefaultAsync(c => c.Id == itemId)
+                   ?? throw new InvalidOperationException($"Checklist item {itemId} not found.");
+
+        item.IsDone = isDone;
+        item.CompletedUtc = isDone ? DateTime.UtcNow : null;
+
+        await db.SaveChangesAsync();
+    }
 }
