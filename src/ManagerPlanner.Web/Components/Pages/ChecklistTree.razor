@@ -1,0 +1,28 @@
+@inject PlanningService PlanningService
+
+@foreach (var item in Items)
+{
+    <div>
+        <MudCheckBox T="bool" Value="@item.IsDone" ValueChanged="@(newValue => OnToggleAsync(item, newValue))" Label="@GetLabel(item)" Dense="true" />
+        @if (item.Children.Count > 0)
+        {
+            <div style="margin-left:1.5rem">
+                <ChecklistTree Items="item.Children.OrderBy(c => c.SortOrder).ToList()" />
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<ChecklistItem> Items { get; set; } = new();
+
+    private static string GetLabel(ChecklistItem item)
+        => item.Assignee is null ? item.Label : $"{item.Label} — {item.Assignee.FullName}";
+
+    private async Task OnToggleAsync(ChecklistItem item, bool newValue)
+    {
+        await PlanningService.ToggleChecklistItemAsync(item.Id, newValue);
+        item.IsDone = newValue;
+    }
+}
