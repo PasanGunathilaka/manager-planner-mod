@@ -1,0 +1,1556 @@
+{
+  "MOD01-C001": {
+    "CaseId": "MOD01-C001",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Project name is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C002": {
+    "CaseId": "MOD01-C002",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Project name is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C003": {
+    "CaseId": "MOD01-C003",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Project name is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C004": {
+    "CaseId": "MOD01-C004",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C005": {
+    "CaseId": "MOD01-C005",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C006": {
+    "CaseId": "MOD01-C006",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C007": {
+    "CaseId": "MOD01-C007",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Project name cannot exceed 120 characters.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C008": {
+    "CaseId": "MOD01-C008",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C009": {
+    "CaseId": "MOD01-C009",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Task title is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C010": {
+    "CaseId": "MOD01-C010",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Task title is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C011": {
+    "CaseId": "MOD01-C011",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Task title is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C012": {
+    "CaseId": "MOD01-C012",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C013": {
+    "CaseId": "MOD01-C013",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C014": {
+    "CaseId": "MOD01-C014",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C015": {
+    "CaseId": "MOD01-C015",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Task title cannot exceed 120 characters.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C016": {
+    "CaseId": "MOD01-C016",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C017": {
+    "CaseId": "MOD01-C017",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Objective title is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C018": {
+    "CaseId": "MOD01-C018",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Objective title is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C019": {
+    "CaseId": "MOD01-C019",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Objective title is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C020": {
+    "CaseId": "MOD01-C020",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C021": {
+    "CaseId": "MOD01-C021",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C022": {
+    "CaseId": "MOD01-C022",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C023": {
+    "CaseId": "MOD01-C023",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Objective title cannot exceed 150 characters.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C024": {
+    "CaseId": "MOD01-C024",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C025": {
+    "CaseId": "MOD01-C025",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Checklist label is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C026": {
+    "CaseId": "MOD01-C026",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Checklist label is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C027": {
+    "CaseId": "MOD01-C027",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Checklist label is required.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C028": {
+    "CaseId": "MOD01-C028",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C029": {
+    "CaseId": "MOD01-C029",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C030": {
+    "CaseId": "MOD01-C030",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C031": {
+    "CaseId": "MOD01-C031",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Checklist label cannot exceed 300 characters.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C032": {
+    "CaseId": "MOD01-C032",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C033": {
+    "CaseId": "MOD01-C033",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The note is empty \u2014 type what was said before saving.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C034": {
+    "CaseId": "MOD01-C034",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The note is empty \u2014 type what was said before saving.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C035": {
+    "CaseId": "MOD01-C035",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The note is empty \u2014 type what was said before saving.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C036": {
+    "CaseId": "MOD01-C036",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C037": {
+    "CaseId": "MOD01-C037",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C038": {
+    "CaseId": "MOD01-C038",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C039": {
+    "CaseId": "MOD01-C039",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The note is too long \u2014 it cannot exceed 2000 characters.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C040": {
+    "CaseId": "MOD01-C040",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C041": {
+    "CaseId": "MOD01-C041",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The note date cannot be more than 1 month(s) in the past.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C042": {
+    "CaseId": "MOD01-C042",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C043": {
+    "CaseId": "MOD01-C043",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The note date cannot be more than 1 month(s) in the past.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C044": {
+    "CaseId": "MOD01-C044",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C045": {
+    "CaseId": "MOD01-C045",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The note date cannot be in the future.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C046": {
+    "CaseId": "MOD01-C046",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C047": {
+    "CaseId": "MOD01-C047",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The note date cannot be more than 1 month(s) in the past.",
+    "ExceptionType": "ManagerPlanner.Core.Validation.ValidationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD01-C048": {
+    "CaseId": "MOD01-C048",
+    "Output": "no exception (validation passed)",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C001": {
+    "CaseId": "MOD02-C001",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C002": {
+    "CaseId": "MOD02-C002",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C003": {
+    "CaseId": "MOD02-C003",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C004": {
+    "CaseId": "MOD02-C004",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C005": {
+    "CaseId": "MOD02-C005",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C006": {
+    "CaseId": "MOD02-C006",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C007": {
+    "CaseId": "MOD02-C007",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C008": {
+    "CaseId": "MOD02-C008",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C009": {
+    "CaseId": "MOD02-C009",
+    "Output": {
+      "Value": 0,
+      "IsNegativeZero": false
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C010": {
+    "CaseId": "MOD02-C010",
+    "Output": {
+      "Value": 0,
+      "IsNegativeZero": false
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C011": {
+    "CaseId": "MOD02-C011",
+    "Output": {
+      "Value": 100,
+      "IsNegativeZero": false
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C012": {
+    "CaseId": "MOD02-C012",
+    "Output": {
+      "Value": 33.3,
+      "IsNegativeZero": false
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C013": {
+    "CaseId": "MOD02-C013",
+    "Output": {
+      "Value": 1.2,
+      "IsNegativeZero": false
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C014": {
+    "CaseId": "MOD02-C014",
+    "Output": {
+      "Value": 1.8,
+      "IsNegativeZero": false
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C015": {
+    "CaseId": "MOD02-C015",
+    "Output": {
+      "Value": -0,
+      "IsNegativeZero": true
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C016": {
+    "CaseId": "MOD02-C016",
+    "Output": {
+      "Value": 100,
+      "IsNegativeZero": false
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD02-C017": {
+    "CaseId": "MOD02-C017",
+    "Output": {
+      "Value": -214748364800,
+      "IsNegativeZero": false
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C001": {
+    "CaseId": "MOD03-C001",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C002": {
+    "CaseId": "MOD03-C002",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C003": {
+    "CaseId": "MOD03-C003",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C004": {
+    "CaseId": "MOD03-C004",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C005": {
+    "CaseId": "MOD03-C005",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C006": {
+    "CaseId": "MOD03-C006",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C007": {
+    "CaseId": "MOD03-C007",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C008": {
+    "CaseId": "MOD03-C008",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C009": {
+    "CaseId": "MOD03-C009",
+    "Output": [
+      "Active Member"
+    ],
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C010": {
+    "CaseId": "MOD03-C010",
+    "Output": 0,
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C011": {
+    "CaseId": "MOD03-C011",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C012": {
+    "CaseId": "MOD03-C012",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C013": {
+    "CaseId": "MOD03-C013",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C014": {
+    "CaseId": "MOD03-C014",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C015": {
+    "CaseId": "MOD03-C015",
+    "Output": [
+      "Proj Two",
+      "Proj One"
+    ],
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C016": {
+    "CaseId": "MOD03-C016",
+    "Output": 0,
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C017": {
+    "CaseId": "MOD03-C017",
+    "Output": "Padded Name",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C018": {
+    "CaseId": "MOD03-C018",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "An error occurred while saving the entity changes. See the inner exception for details.",
+    "ExceptionType": "Microsoft.EntityFrameworkCore.DbUpdateException",
+    "InnerExceptionMessage": "SQLite Error 19: \u0027FOREIGN KEY constraint failed\u0027."
+  },
+  "MOD03-C019": {
+    "CaseId": "MOD03-C019",
+    "Output": {
+      "DescriptionIsNull": true
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C020": {
+    "CaseId": "MOD03-C020",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C021": {
+    "CaseId": "MOD03-C021",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C022": {
+    "CaseId": "MOD03-C022",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C023": {
+    "CaseId": "MOD03-C023",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C024": {
+    "CaseId": "MOD03-C024",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C025": {
+    "CaseId": "MOD03-C025",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C026": {
+    "CaseId": "MOD03-C026",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C027": {
+    "CaseId": "MOD03-C027",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C028": {
+    "CaseId": "MOD03-C028",
+    "Output": {
+      "AssigneeId": null,
+      "Deadline": null,
+      "ObjectiveId": null,
+      "IsDiscovered": false,
+      "DiscoveredInMeetingId": null,
+      "Description": null
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C029": {
+    "CaseId": "MOD03-C029",
+    "Output": {
+      "IsDiscovered": true,
+      "DiscoveredInMeetingId": null
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C030": {
+    "CaseId": "MOD03-C030",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "An error occurred while saving the entity changes. See the inner exception for details.",
+    "ExceptionType": "Microsoft.EntityFrameworkCore.DbUpdateException",
+    "InnerExceptionMessage": "SQLite Error 19: \u0027FOREIGN KEY constraint failed\u0027."
+  },
+  "MOD03-C031": {
+    "CaseId": "MOD03-C031",
+    "Output": "Padded Title",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C032": {
+    "CaseId": "MOD03-C032",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C033": {
+    "CaseId": "MOD03-C033",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C034": {
+    "CaseId": "MOD03-C034",
+    "Output": 0,
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C035": {
+    "CaseId": "MOD03-C035",
+    "Output": 1,
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C036": {
+    "CaseId": "MOD03-C036",
+    "Output": 0,
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C037": {
+    "CaseId": "MOD03-C037",
+    "Output": [
+      "Alpha",
+      "Beta"
+    ],
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C038": {
+    "CaseId": "MOD03-C038",
+    "Output": [
+      "ZZZ",
+      "AAA"
+    ],
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C039": {
+    "CaseId": "MOD03-C039",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C040": {
+    "CaseId": "MOD03-C040",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C041": {
+    "CaseId": "MOD03-C041",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C042": {
+    "CaseId": "MOD03-C042",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C043": {
+    "CaseId": "MOD03-C043",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C044": {
+    "CaseId": "MOD03-C044",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C045": {
+    "CaseId": "MOD03-C045",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C046": {
+    "CaseId": "MOD03-C046",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C047": {
+    "CaseId": "MOD03-C047",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C048": {
+    "CaseId": "MOD03-C048",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Task 999999 not found.",
+    "ExceptionType": "System.InvalidOperationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C049": {
+    "CaseId": "MOD03-C049",
+    "Output": {
+      "StatusHistoryCount": 0,
+      "Status": "NotStarted"
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C050": {
+    "CaseId": "MOD03-C050",
+    "Output": {
+      "Status": "Done",
+      "CompletedUtcIsNull": false,
+      "StatusHistoryCount": 1
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C051": {
+    "CaseId": "MOD03-C051",
+    "Output": {
+      "Status": "InProgress",
+      "CompletedUtcIsNull": true,
+      "StatusHistoryCount": 2
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C052": {
+    "CaseId": "MOD03-C052",
+    "Output": {
+      "Status": "Blocked",
+      "CompletedUtcIsNull": true
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C053": {
+    "CaseId": "MOD03-C053",
+    "Output": {
+      "ReasonIsNull": true
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C054": {
+    "CaseId": "MOD03-C054",
+    "Output": "Waiting on vendor",
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C055": {
+    "CaseId": "MOD03-C055",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "An error occurred while saving the entity changes. See the inner exception for details.",
+    "ExceptionType": "Microsoft.EntityFrameworkCore.DbUpdateException",
+    "InnerExceptionMessage": "SQLite Error 19: \u0027FOREIGN KEY constraint failed\u0027."
+  },
+  "MOD03-C056": {
+    "CaseId": "MOD03-C056",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C057": {
+    "CaseId": "MOD03-C057",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C058": {
+    "CaseId": "MOD03-C058",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C059": {
+    "CaseId": "MOD03-C059",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C060": {
+    "CaseId": "MOD03-C060",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C061": {
+    "CaseId": "MOD03-C061",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C062": {
+    "CaseId": "MOD03-C062",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C063": {
+    "CaseId": "MOD03-C063",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C064": {
+    "CaseId": "MOD03-C064",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C065": {
+    "CaseId": "MOD03-C065",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C066": {
+    "CaseId": "MOD03-C066",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C067": {
+    "CaseId": "MOD03-C067",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C068": {
+    "CaseId": "MOD03-C068",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C069": {
+    "CaseId": "MOD03-C069",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C070": {
+    "CaseId": "MOD03-C070",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C071": {
+    "CaseId": "MOD03-C071",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C072": {
+    "CaseId": "MOD03-C072",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C073": {
+    "CaseId": "MOD03-C073",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C074": {
+    "CaseId": "MOD03-C074",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C075": {
+    "CaseId": "MOD03-C075",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C076": {
+    "CaseId": "MOD03-C076",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C077": {
+    "CaseId": "MOD03-C077",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C078": {
+    "CaseId": "MOD03-C078",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C079": {
+    "CaseId": "MOD03-C079",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C080": {
+    "CaseId": "MOD03-C080",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C081": {
+    "CaseId": "MOD03-C081",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C082": {
+    "CaseId": "MOD03-C082",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C083": {
+    "CaseId": "MOD03-C083",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C084": {
+    "CaseId": "MOD03-C084",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C085": {
+    "CaseId": "MOD03-C085",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C086": {
+    "CaseId": "MOD03-C086",
+    "Output": {
+      "TotalTasks": 0,
+      "Done": 0,
+      "PercentComplete": 0
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C087": {
+    "CaseId": "MOD03-C087",
+    "Output": {
+      "TotalTasks": 4,
+      "Done": 1,
+      "InProgress": 1,
+      "Blocked": 1,
+      "NotStarted": 1,
+      "PercentComplete": 25
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C088": {
+    "CaseId": "MOD03-C088",
+    "Output": 1,
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C089": {
+    "CaseId": "MOD03-C089",
+    "Output": 0,
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD03-C090": {
+    "CaseId": "MOD03-C090",
+    "Output": {
+      "ProjectNameIsEmpty": true,
+      "TotalTasks": 0
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C001": {
+    "CaseId": "MOD04-C001",
+    "Output": {
+      "WorkItemSurvived": true,
+      "ObjectiveIdAfter": null
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C002": {
+    "CaseId": "MOD04-C002",
+    "Output": {
+      "TaskDiscoveredInMeetingIdAfter": null,
+      "NoteMeetingIdAfter": null
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C003": {
+    "CaseId": "MOD04-C003",
+    "Output": {
+      "TaskSurvived": true,
+      "AssigneeIdAfter": null
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C004": {
+    "CaseId": "MOD04-C004",
+    "Output": {
+      "ItemSurvived": true,
+      "AssigneeIdAfter": null
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C005": {
+    "CaseId": "MOD04-C005",
+    "Output": {
+      "MeetingSurvived": true,
+      "ParticipantIdAfter": null
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C006": {
+    "CaseId": "MOD04-C006",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The association between entity types \u0027User\u0027 and \u0027Project\u0027 has been severed, but the relationship is either marked as required or is implicitly required because the foreign key is not nullable. If the dependent/child entity should be deleted when a required relationship is severed, configure the relationship to use cascade deletes. Consider using \u0027DbContextOptionsBuilder.EnableSensitiveDataLogging\u0027 to see the key values.",
+    "ExceptionType": "System.InvalidOperationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C007": {
+    "CaseId": "MOD04-C007",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The association between entity types \u0027User\u0027 and \u0027StatusChange\u0027 has been severed, but the relationship is either marked as required or is implicitly required because the foreign key is not nullable. If the dependent/child entity should be deleted when a required relationship is severed, configure the relationship to use cascade deletes. Consider using \u0027DbContextOptionsBuilder.EnableSensitiveDataLogging\u0027 to see the key values.",
+    "ExceptionType": "System.InvalidOperationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C008": {
+    "CaseId": "MOD04-C008",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "The association between entity types \u0027User\u0027 and \u0027ProgressNote\u0027 has been severed, but the relationship is either marked as required or is implicitly required because the foreign key is not nullable. If the dependent/child entity should be deleted when a required relationship is severed, configure the relationship to use cascade deletes. Consider using \u0027DbContextOptionsBuilder.EnableSensitiveDataLogging\u0027 to see the key values.",
+    "ExceptionType": "System.InvalidOperationException",
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C009": {
+    "CaseId": "MOD04-C009",
+    "Output": {
+      "ParentSurvived": false,
+      "ChildSurvived": true,
+      "ChildParentIdAfter": null
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C010": {
+    "CaseId": "MOD04-C010",
+    "Output": {
+      "TaskSurvived": true,
+      "OwnerRowGone": true,
+      "UsersCountAfter": 2
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C011": {
+    "CaseId": "MOD04-C011",
+    "Output": {
+      "TaskOwnerRowsAfter": 0,
+      "WorkItemsAfter": 0
+    },
+    "OutputType": "value",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD04-C012": {
+    "CaseId": "MOD04-C012",
+    "Output": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "An error occurred while saving the entity changes. See the inner exception for details.",
+    "ExceptionType": "Microsoft.EntityFrameworkCore.DbUpdateException",
+    "InnerExceptionMessage": "SQLite Error 19: \u0027FOREIGN KEY constraint failed\u0027."
+  },
+  "MOD05-C001": {
+    "CaseId": "MOD05-C001",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C002": {
+    "CaseId": "MOD05-C002",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C003": {
+    "CaseId": "MOD05-C003",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C004": {
+    "CaseId": "MOD05-C004",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C005": {
+    "CaseId": "MOD05-C005",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C006": {
+    "CaseId": "MOD05-C006",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C007": {
+    "CaseId": "MOD05-C007",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C008": {
+    "CaseId": "MOD05-C008",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C009": {
+    "CaseId": "MOD05-C009",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C010": {
+    "CaseId": "MOD05-C010",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C011": {
+    "CaseId": "MOD05-C011",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C012": {
+    "CaseId": "MOD05-C012",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C013": {
+    "CaseId": "MOD05-C013",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  },
+  "MOD05-C014": {
+    "CaseId": "MOD05-C014",
+    "Output": null,
+    "OutputType": "not_implemented",
+    "ExceptionMessage": null,
+    "ExceptionType": null,
+    "InnerExceptionMessage": null
+  }
+}

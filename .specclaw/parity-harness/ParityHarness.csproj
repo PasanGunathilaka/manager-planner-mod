@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0: matches ManagerPlanner.Core.csproj's own TargetFramework (read directly). -->
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- No extra package references needed: Microsoft.Data.Sqlite / Microsoft.EntityFrameworkCore
+         flow transitively through the ProjectReference below, since ManagerPlanner.Core.csproj
+         itself references Microsoft.EntityFrameworkCore.Sqlite 8.0.11 directly (confirmed by
+         reading that file), mirroring the precedent at .specclaw/baseline/harness/Harness.csproj. -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- This is a disposable, throwaway verification harness for the Verify Parity gate. It
+         references the MODERN project in this same repo (not the legacy sibling repo), per the
+         task's explicit instructions. -->
+    <ProjectReference Include="..\..\src\ManagerPlanner.Core\ManagerPlanner.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -180,19 +180,19 @@ All rules below are read directly from `src/ExecutivePlanning.Core/Services/Plan
 (the `PlanningRules` static class) and `Services/PlanningService.cs`, cross-checked against
 `tests/ExecutivePlanning.Tests/PlanningServiceTests.cs` where a matching test exists.
 
-1. **Project name required, ≤120 chars** — `PlanningRules.ValidateProjectName`
+1. **DR-001 — Project name required, ≤120 chars** — `PlanningRules.ValidateProjectName`
    (`PlanningValidation.cs:21-27`). Rejects an empty/whitespace-only name and any name over
    `MaxProjectName` (120) characters. Mechanical: the 120-character ceiling has no stated
    rationale in the code.
-2. **Task title required, ≤120 chars** — `ValidateTaskTitle` (`:29-35`), same shape as above;
+2. **DR-002 — Task title required, ≤120 chars** — `ValidateTaskTitle` (`:29-35`), same shape as above;
    test `AddTask_rejects_empty_and_overlong_titles` exercises both branches.
-3. **Objective title required, ≤150 chars** — `ValidateObjectiveTitle` (`:37-43`). Mechanical:
+3. **DR-003 — Objective title required, ≤150 chars** — `ValidateObjectiveTitle` (`:37-43`). Mechanical:
    no stated reason for 150 vs. the task/project limit of 120.
-4. **Checklist label required, ≤300 chars** — `ValidateChecklistLabel` (`:45-51`).
-5. **Note text required, ≤2000 chars** — `ValidateNoteText` (`:53-59`). The empty-text message
+4. **DR-004 — Checklist label required, ≤300 chars** — `ValidateChecklistLabel` (`:45-51`).
+5. **DR-005 — Note text required, ≤2000 chars** — `ValidateNoteText` (`:53-59`). The empty-text message
    ("The note is empty — type what was said before saving.") states the *intent* (a note must
    capture actual spoken content) but the 2000-character ceiling itself is mechanical/unexplained.
-6. **A note can only be dated within a fixed backward/forward window** —
+6. **DR-006 — A note can only be dated within a fixed backward/forward window** —
    `ValidateNoteDate` (`:61-75`, `NoteBackdateMonths = 1`). Rejects a note dated more than one
    month before today (mechanical — the choice of exactly one month is not explained anywhere in
    the code) and rejects any note dated after today. Inference: forbidding future dates is
@@ -200,7 +200,7 @@ All rules below are read directly from `src/ExecutivePlanning.Core/Services/Plan
    `ProgressNote.cs`'s doc comment), but the validator itself states only the mechanism, not this
    reasoning — test `AddNote_rejects_dates_more_than_a_month_back_or_future` exercises both
    boundaries.
-7. **Promised-vs-delivered verdict computation** —
+7. **DR-007 — Promised-vs-delivered verdict computation** —
    `PlanningService.GetAccountabilityReportAsync` (`PlanningService.cs:269-330`) +
    `AccountabilityRow.Verdict` (`Reports.cs:37-47`). For each task, only the **most recently
    created** promise note (`IsPromise && PromisedDate.HasValue`, ordered by `CreatedUtc` descending)
@@ -225,17 +225,17 @@ All rules below are read directly from `src/ExecutivePlanning.Core/Services/Plan
    getter — so a task whose own deadline has passed but which *does* carry a promise not yet due
    (not yet "broken") is labeled "Overdue (no promise)" even though a promise is in fact on record.
    This is a direct reading of the code's evaluation order, not a guess.
-8. **Changing a task to its current status is a no-op** — `ChangeStatusAsync`
+8. **DR-008 — Changing a task to its current status is a no-op** — `ChangeStatusAsync`
    (`PlanningService.cs:184-205`): `if (task.Status == newStatus) return;` before any
    `StatusChange` row is written. Confirmed by test `ChangeStatus_to_same_status_is_noop`.
-9. **Completion timestamp tracks the Done transition, both ways** — `ChangeStatusAsync`:
+9. **DR-009 — Completion timestamp tracks the Done transition, both ways** — `ChangeStatusAsync`:
    `task.CompletedUtc = newStatus == WorkItemStatus.Done ? DateTime.UtcNow : null;` — moving a task
    *out* of `Done` clears `CompletedUtc` back to `null`, not just setting it when entering `Done`.
    Mechanical: the code does this unconditionally; no comment discusses re-opening a completed task.
-10. **Setting task owners replaces the full set, it does not append** — `SetOwnersAsync`
+10. **DR-010 — Setting task owners replaces the full set, it does not append** — `SetOwnersAsync`
     (`PlanningService.cs:172-179`) removes every existing `TaskOwner` row for the task before
     adding the new set. Confirmed by the second assertion in test `Task_can_have_multiple_owners`.
-11. **Toggling a checklist item stamps/clears its completion time** — `ToggleChecklistItemAsync`
+11. **DR-011 — Toggling a checklist item stamps/clears its completion time** — `ToggleChecklistItemAsync`
     (`PlanningService.cs:162-169`): `item.CompletedUtc = isDone ? DateTime.UtcNow : null;`.
 
 ## Enumerations

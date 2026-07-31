@@ -305,3 +305,33 @@ T4's coding agent (the largest task: ProjectDetail.razor + TaskRow.razor, conver
 When a coding agent (or Claude directly) is about to write markup/code against a third-party library API it isn't 100% certain of, encourage verifying exact member names against the actually-installed package (via reflection, decompilation, or reading the package's own source/docs) before writing code, rather than writing-then-fixing compile errors reactively -- this is cheap insurance that fully paid off here.
 
 ---
+
+## [L21] agent_issue — specclaw-build-context's awk extraction for a task's Note...
+
+**When:** 2026-07-31 06:36 UTC
+**Category:** agent_issue
+**Priority:** medium
+**Status:** pending
+
+### Detail
+specclaw-build-context's awk extraction for a task's Notes field only captures the single line immediately after '- Notes:' and does not continue into wrapped continuation lines (unlike specclaw-parse-tasks, which does capture the full multi-line Notes text). For T1 this silently truncated a detailed, multi-paragraph grounding note (exact legacy file:line citations, exact exception message, exact field logic) down to one sentence, and the truncation logic also leaked wave 2's (T2's) first Notes line into T1's rendered 'Your Task' section. Worked around this build by supplying the full, correct Notes text directly from tasks.md myself when doing/delegating T1 and T2, rather than relying solely on the generated context payload.
+
+### Action
+Fix specclaw-build-context's Notes-field awk block to capture all indented continuation lines following '- Notes:' (stopping at the next '  - ' bullet or a blank/dedented line), matching specclaw-parse-tasks's own multi-line handling — otherwise every coding agent for a task with a long Notes field silently loses most of its grounding detail.
+
+---
+
+## [L22] agent_issue — specclaw-verify update-status's row-replace logic matches...
+
+**When:** 2026-07-31 07:28 UTC
+**Category:** agent_issue
+**Priority:** low
+**Status:** pending
+
+### Detail
+specclaw-verify update-status's row-replace logic matches any markdown table line starting with '| Verify' rather than scoping to the Progress table specifically. This change's status.md has a second table (Agent Runs) with its own '| Verify | <agent> | <model> | <verdict> | <duration> |' row; running 'specclaw-verify update-status' clobbered that row down to '| Verify | ✅ Passed | sonnet |', losing the agent/duration columns. Fixed manually after noticing it in the file-changed system reminder.
+
+### Action
+Scope specclaw-verify update-status's row match to the '## Progress' table section (e.g. stop matching once a later '## ' heading is reached, or anchor on the full '| Verify | <status-emoji> Pending |' pattern instead of a bare '| Verify' prefix) so it can't collide with an unrelated table using the same row label.
+
+---
