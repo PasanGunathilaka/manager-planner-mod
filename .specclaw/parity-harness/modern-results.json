@@ -900,23 +900,29 @@
   "MOD03-C042": {
     "CaseId": "MOD03-C042",
     "Output": null,
-    "OutputType": "not_implemented",
-    "ExceptionMessage": null,
-    "ExceptionType": null,
+    "OutputType": "exception",
+    "ExceptionMessage": "Checklist item 999999 not found.",
+    "ExceptionType": "System.InvalidOperationException",
     "InnerExceptionMessage": null
   },
   "MOD03-C043": {
     "CaseId": "MOD03-C043",
-    "Output": null,
-    "OutputType": "not_implemented",
+    "Output": {
+      "IsDone": true,
+      "CompletedUtcIsNull": false
+    },
+    "OutputType": "value",
     "ExceptionMessage": null,
     "ExceptionType": null,
     "InnerExceptionMessage": null
   },
   "MOD03-C044": {
     "CaseId": "MOD03-C044",
-    "Output": null,
-    "OutputType": "not_implemented",
+    "Output": {
+      "IsDone": false,
+      "CompletedUtcIsNull": true
+    },
+    "OutputType": "value",
     "ExceptionMessage": null,
     "ExceptionType": null,
     "InnerExceptionMessage": null
