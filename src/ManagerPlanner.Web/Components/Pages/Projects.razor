@@ -1,5 +1,6 @@
 @page "/projects"
 @inject PlanningService PlanningService
+@inject IDialogService DialogService
 
 <PageTitle>Projects</PageTitle>
 
@@ -24,6 +25,9 @@ else
                 {
                     <text> &mdash; @project.Description</text>
                 }
+                <span @onclick:stopPropagation="true" @onclick:preventDefault="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteProjectAsync(project)" />
+                </span>
             </MudListItem>
         }
     </MudList>
@@ -78,6 +82,16 @@ else
         catch (ManagerPlanner.Core.Validation.ValidationException ex)
         {
             _errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteProjectAsync(Project project)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync("Delete project", $"Delete project '{project.Name}' and all its objectives, tasks, checklist items and notes?\nThis cannot be undone.", yesText: "Delete", cancelText: "Cancel");
+        if (confirmed == true)
+        {
+            await PlanningService.DeleteProjectAsync(project.Id);
+            _projects = await PlanningService.GetProjectsAsync();
         }
     }
 }
