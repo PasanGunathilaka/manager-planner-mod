@@ -85,14 +85,28 @@ None. No HTTP/JSON API — the component calls `PlanningService` directly.
    correctly from a cold context without being included — only the
    self-referencing subtree needs tracking. No further investigation is
    needed during build; this is a known, verified fact going in.
-2. **The Delete icon button uses `@onclick:stopPropagation`, not a
-   restructured navigation model.** `MudListItem<T>` (confirmed via
-   reflection against the installed `MudBlazor.dll`, 9.7.0) exposes both
-   `Href` (for the existing row-click navigation) and arbitrary
-   `ChildContent` — placing an interactive icon button inside that
-   content and stopping click propagation is the standard, minimal way to
-   add a second action to an already-clickable row, without replacing
-   `Href` with a manual `OnClick`/`NavigationManager.NavigateTo` scheme.
+2. **The Delete icon button uses both `@onclick:stopPropagation` AND
+   `@onclick:preventDefault`, not `stopPropagation` alone.** `MudListItem<T>`
+   with `Href` set (confirmed via reflection against the installed
+   `MudBlazor.dll`, 9.7.0, and independently confirmed by reading the
+   actual server-rendered HTML during build verification) renders as a
+   genuine native `<a href="...">` element, not a Blazor-only synthetic
+   click handler. `stopPropagation` alone prevents the click from
+   bubbling to any ancestor *listener* (including whatever click
+   interception Blazor's enhanced-navigation JS attaches at the document
+   level), but does **not** suppress the browser's own native default
+   action for an `<a>` element — that requires `preventDefault`
+   specifically, per the DOM event spec (a native anchor's default
+   navigation is tied to whether `preventDefault()` was called anywhere
+   during the event's dispatch, independent of whether propagation to
+   other listeners was stopped). Verified via the actual rendered HTML
+   after adding it: the wrapping `<span>` carries both
+   `__internal_stopPropagation_onclick` and
+   `__internal_preventDefault_onclick` markers. Placing an interactive
+   icon button inside `MudListItem`'s child content with both modifiers
+   is the correct, minimal way to add a second action to an
+   already-`Href`-clickable row, without replacing `Href` with a manual
+   `OnClick`/`NavigationManager.NavigateTo` scheme.
 3. **Reload `_projects` after a successful delete, reusing
    `AddProjectAsync`'s existing shape** — no new refresh/callback
    mechanism is introduced. `Projects.razor` has no parent/child
@@ -148,12 +162,21 @@ None. No HTTP/JSON API — the component calls `PlanningService` directly.
   comment on the method itself (matching `task-deletion`'s own
   precedent) — a future reader hits the explanation before assuming the
   `Include` is decorative.
-- **Risk:** `@onclick:stopPropagation` on the Delete button could fail to
-  fully suppress the row's `Href` navigation if `MudListItem`'s internal
-  click handling differs from a plain anchor's. **Mitigation:** AC6
-  explicitly requires live verification (click Delete → no navigation;
-  click elsewhere on the row → navigates), not just a code-level
-  assumption that `stopPropagation` works.
+- **Risk (materialized during build, then fixed):** `@onclick:stopPropagation`
+  alone was initially used on the Delete button; reasoning through the
+  actual rendered markup (`MudListItem` with `Href` renders as a genuine
+  native `<a>`) revealed this would not suppress the anchor's own default
+  navigation, since `stopPropagation` only blocks ancestor *listeners*,
+  not a native element's default action — only `preventDefault` does that.
+  **Mitigation:** added `@onclick:preventDefault="true"` alongside
+  `stopPropagation`; confirmed via the actual server-rendered HTML that
+  both modifiers are now present on the wrapping element. A full
+  interactive click-through (dialog appears, Cancel/Confirm behavior, no
+  stray navigation) could not be performed in this environment (browser
+  automation extension unavailable to both the build agent and the
+  build orchestrator) — AC3/AC4/AC6 rest on this code-level fix plus
+  DOM-inspection evidence, not an observed click, and should be spot-checked
+  live the next time browser tooling is available.
 - **Risk:** forgetting the reload-after-delete step would leave a stale,
   now-nonexistent project visible in the list until a manual page
   refresh. **Mitigation:** FR4/AC4 require confirming the row disappears

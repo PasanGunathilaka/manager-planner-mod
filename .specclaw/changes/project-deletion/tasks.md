@@ -20,7 +20,7 @@ per spec.md NFR2/AC8.
 
 ### Wave 1 — Core business logic
 
-- [ ] `T1` — Add `DeleteProjectAsync` to `PlanningService`
+- [x] `T1` — Add `DeleteProjectAsync` to `PlanningService`
   - Files: `src/ManagerPlanner.Core/Services/PlanningService.cs`
   - Estimate: small
   - Depends: none
@@ -30,7 +30,7 @@ per spec.md NFR2/AC8.
 
 ### Wave 2 — Component + verification
 
-- [ ] `T2` — Delete icon button, confirmation dialog, and reload wiring on `Projects.razor`
+- [x] `T2` — Delete icon button, confirmation dialog, and reload wiring on `Projects.razor`
   - Files: `src/ManagerPlanner.Web/Components/Pages/Projects.razor`
   - Estimate: medium
   - Depends: `T1`
