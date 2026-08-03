@@ -13,7 +13,7 @@
 | Design | 🟢 Complete | 1 new `PlanningService` method, `TaskRow` gains an Actions cell (Delete + confirm dialog) and a `TaskDeleted` callback |
 | Tasks | 🟢 Complete | 2 tasks / 2 waves |
 | Build | 🟢 Complete | Both tasks done; merged to master |
-| Verify | ⚪ Pending | Run `/specclaw:verify` next |
+| Verify | ✅ Passed | 8/8 acceptance criteria — see verify-report.md |
 
 ## Task Progress
 
@@ -77,3 +77,14 @@ no deviation.
    the user to close/unload VS; re-ran the build against the real tree
    afterward and confirmed 0 errors before proceeding. Not a code issue —
    pure tooling contention.
+3. **Verify went further than a code-reading pass**: it wrote its own
+   independent live-DB harness (not reusing the build's own scratch
+   scripts) and additionally ran a negative control — reproducing the
+   literal legacy `DeleteTaskAsync` body with no `.Include` — to
+   confirm the FK failure is real and the fix is both necessary and
+   sufficient, not just present. Two non-blocking, doc-only findings: (a)
+   spec.md's AC3 restatement uses a space where FR1/FR3 and the actual
+   code use `\n` — cosmetic, code is correct; (b) `ProjectDetail.razor`'s
+   Planner Grid `<thead>` has been missing a "Notes" column header since
+   `progress-notes-and-promise-tracking` (BL-007) — pre-existing, not a
+   task-deletion regression, out of this item's scope.
