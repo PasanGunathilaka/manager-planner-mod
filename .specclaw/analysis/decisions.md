@@ -1,0 +1,124 @@
+# Decisions: manager-planner-mod
+
+**Date generated:** 2026-08-03
+**Source:** .specclaw/analysis/clarifications.md
+
+<!--
+  This is the clean, pinnable decision record /specclaw:clarify --resolve
+  produces from clarifications.md's answered questions, swept across all
+  three question families (CQ-NNN/SQ-NNN/UQ-NNN). Every entry below is a
+  mechanical transcription of an already-answered question — the
+  Answer/Decided by/Date fields are transcribed, never reinterpreted. Each
+  entry carries a **Family:** line (Extracted | Standard bank | Custom
+  (per-repo)) derived mechanically from the question's ID prefix, so a
+  reader can tell at a glance whether a decision came from this repo's own
+  code, the plugin's standard bank, or a per-repo custom question.
+  Re-running --resolve is idempotent: it always reflects the current state
+  of clarifications.md's answered blocks, replacing this file's prior
+  content wholesale (the prior version is archived, never lost).
+
+  Pin this file — add `.specclaw/analysis/decisions.md` to config.yaml's
+  `context.pin` (raise `max_lines` accordingly) and `git add` it, so every
+  downstream /specclaw:propose, /specclaw:plan, and /specclaw:build cites
+  these decisions as grounding instead of re-deriving them. Discovery
+  enumerates via `git ls-files` — an untracked file is invisible to it.
+-->
+
+## Decisions
+
+### CQ-001 — Canonical front-end: ExecutivePlanning.Desktop vs. ManagerPlanner.Desktop
+
+- **Type:** DECISION
+- **Family:** Extracted
+- **Decision:** Option 3 Merge both legacy feature sets into one modern rebuilt UI. ManagerPlanner.Desktop is treated as the newer operational reference, but useful capabilities that exist only in ExecutivePlanning.Desktop, such as meeting recording and full status management, must not be silently dropped.
+- **Decided by:** Pasan Gunathilaka
+- **Date:** 2026/07/30
+- **Source:** codebase-report.md Risks/Tech-Debt ("Two near-duplicate front ends over the same Core... it is undocumented whether ExecutivePlanning.Desktop is still meant to be maintained or is legacy code being kept temporarily") and Suggested First Changes ("clarify (this is undocumented) whether ExecutivePlanning.Desktop is still a live target — the five most recent commits... and the publish/ scripts all target ManagerPlanner.Desktop only")
+
+### CQ-002 — Schema-evolution / migrations strategy for the rebuild
+
+- **Type:** DECISION
+- **Family:** Extracted
+- **Decision:** Option 1 — introduce a real migrations workflow from the start of the rebuild, using EF Core migrations.
+- **Decided by:** Pasan Gunathilaka
+- **Date:** 2026-07-30
+- **Source:** codebase-report.md Risks/Tech-Debt ("No EF Core migrations exist anywhere in the repo... PlanningDbContextFactory.Create only calls ctx.Database.EnsureCreated()... the codebase's own documented workaround for schema evolution... is to fork a brand-new database file per app version rather than migrate in place") and rebuild-backlog.md item BL-001 Verification inputs needed ("a human must decide the rebuild's schema-evolution strategy — the source has no migration path to observe as a reference")
+
+### CQ-006 — Win95-style skin: preserve as deliberate branding, or modernize
+
+- **Type:** SCOPE
+- **Family:** Extracted
+- **Decision:** Option 2 — Modernize the application using a clean, modern UI theme. The Win95-style appearance is not considered a required part of the legacy business behaviour. The rebuilt application should use a consistent Blazor-compatible component and CSS framework, preferably MudBlazor, while preserving the existing functional workflows and business rules.
+- **Decided by:** Pasan Gunathilaka
+- **Date:** 2026-07-30
+- **Source:** codebase-report.md Domain section ("Inference (low confidence): The Win95-style skin in ManagerPlanner.Desktop (Themes/Win95.axaml, MessageBox.cs's #c0c0c0 grey dialog background and 'Tahoma, \"MS Sans Serif\", Geneva, Verdana, sans-serif' font stack, and MdiHost's cascade/tile semantics) may be a deliberate nostalgia/personality choice for a 'no-nonsense manager' persona rather than a technical necessity — this is a stylistic guess; nothing in the docs explicitly states the design rationale beyond the README calling it a 'classic Win95-style MDI variant.'")
+
+### SQ-001 — Target platform
+
+- **Type:** DECISION
+- **Family:** Standard bank
+- **Decision:** Web application (Blazor .NET) — per ADR-0001, pre-existing.
+- **Decided by:** (pre-existing — see ADR-0001)
+- **Date:** 2026-07-27
+- **Source:** ADR-0001 (target-platform-blazor-web.md), Status: accepted, 2026-07-27
+
+### SQ-002 — Database engine and hosting
+
+- **Type:** DECISION
+- **Family:** Standard bank
+- **Decision:** Option 2 — migrate to PostgreSQL, sized for cloud hosting.
+- **Decided by:** Pasan Gunathilaka
+- **Date:** 2026-08-03
+- **Source:** Standard bank v1 (references/clarify-standard-questions.md)
+
+### SQ-006 — UI framework / component library
+
+- **Type:** DECISION
+- **Family:** Standard bank
+- **Decision:** MudBlazor (Blazor-compatible component/CSS framework) — per decisions.md's CQ-006 decision, pre-existing.
+- **Decided by:** (pre-existing — see decisions.md CQ-006)
+- **Date:** 2026-07-30
+- **Source:** decisions.md, CQ-006 (accepted decision, decided 2026-07-30)
+
+## ADR Promotion Candidates
+
+- **CQ-001** — Canonical Front-End: Merge Legacy UI Feature Sets into One Rebuilt Shell — Foundational, hard-to-reverse scope call every downstream UI feature decision depends on.
+- **CQ-002** — Persistence Migrations: Adopt EF Core Migrations from Project Inception — Establishes the schema-evolution approach for every future persisted entity.
+- **CQ-006** — UI Modernization: Adopt MudBlazor and Drop the Win95-Style Skin — Commits the rebuild to a specific component framework across every screen.
+- **SQ-002** — Persistence Engine: Migrate to PostgreSQL for Cloud Hosting — Settles ADR-0003's previously-undecided engine fork with a genuinely new, architecturally significant decision not yet backed by any accepted ADR.
+
+
+## Outstanding Questions
+
+- **CQ-003** — Product scope breadth: broad manager-accountability tool vs. narrow software-delivery tool (Type: DECISION, Family: Extracted, Blocking: no)
+- **CQ-004** — Single-manager, no-authentication model: preserve or add multi-user {{questions}} auth (Type: DECISION, Family: Extracted, Blocking: yes — blocks the User/auth data model and architecture underlying backlog item BL-001 and, transitively, every item referencing Owner/Assignee/Author/ChangedBy)
+- **CQ-005** — Task ownership model: retire WorkItem.AssigneeId (v1) in favor of TaskOwner (v2), or keep both (Type: DECISION, Family: Extracted, Blocking: yes — blocks backlog item BL-002 (Objective grouping/planner grid owner column) and item BL-003 (Task creation and viewing) acceptance criteria)
+- **CQ-007** — Objective.KeyResult: free text, or a measurable OKR target/actual pair (Type: SCOPE, Family: Extracted, Blocking: no)
+- **CQ-008** — Meeting recording: bring into the MDI shell, or leave as a tabbed-app-only feature (Type: SCOPE, Family: Extracted, Blocking: yes — blocks backlog item BL-006 (Meeting recording and history) and item BL-007 (Progress notes and promise tracking, whose canonical workflow sequences meeting-recording first))
+- **CQ-009** — Status-transition affordance asymmetry: expose all four statuses everywhere, or preserve the Mark-Done-only MDI shortcut (Type: DECISION, Family: Extracted, Blocking: yes — blocks backlog item BL-004 (Task status transitions and the audit trail) acceptance criteria)
+- **CQ-010** — Inline task-add field exposure: unify full form everywhere, or keep the MDI shell's narrower fast-add (Type: DECISION, Family: Extracted, Blocking: yes — blocks backlog item BL-003 (Task/WorkItem creation and viewing) acceptance criteria)
+- **CQ-011** — Missing management UI for supporting entities (team members, task owners, checklist items, objective removal, project status) (Type: SCOPE, Family: Extracted, Blocking: no)
+- **CQ-012** — WorkItem.DiscoveredInMeetingId: wire it up, or intentionally drop it (Type: SCOPE, Family: Extracted, Blocking: no)
+- **CQ-013** — MDI child windows: add a taskbar-equivalent, or preserve menu-only recovery (Type: SCOPE, Family: Extracted, Blocking: no)
+- **CQ-014** — ChecklistItem single-subtree deletion: define intended behavior (never exercised by legacy) (Type: DECISION, Family: Extracted, Blocking: no)
+- **CQ-015** — StatusChange immutability: convention-only, or enforce at schema/type level (Type: DECISION, Family: Extracted, Blocking: no)
+- **CQ-016** — Field-length ceilings (120/150/300/2000 chars) have no stated rationale (Type: MECHANICAL, Family: Extracted, Blocking: no)
+- **CQ-017** — Note backdate window of exactly one month has no stated rationale (Type: MECHANICAL, Family: Extracted, Blocking: no)
+- **CQ-018** — CompletedUtc is cleared when a task is moved out of Done — intentional or bug? (Type: DEFECT, Family: Extracted, Blocking: no)
+- **CQ-019** — "Overdue (no promise)" verdict mislabels tasks that do carry a not-yet-due promise (Type: DEFECT, Family: Extracted, Blocking: yes — rebuild-backlog.md explicitly flags this as "the single highest-priority verification input in this backlog"; blocks backlog item BL-008 (Accountability reporting) acceptance criteria)
+- **CQ-020** — Golden-master capture of ProjectSummary.PercentComplete's rounding/truncation rule (Type: DATA, Family: Extracted, Blocking: no)
+- **CQ-021** — Golden-master capture of MeetingType dropdown display strings (Type: DATA, Family: Extracted, Blocking: no)
+- **CQ-022** — Golden-master capture of exact validation error message text (Type: DATA, Family: Extracted, Blocking: no)
+- **CQ-023** — Full golden-master export of DbSeeder's complete seeded dataset (Type: DATA, Family: Extracted, Blocking: no)
+- **CQ-024** — Golden-master truth table for the Accountability Verdict computation and tie-breaking sort order (Type: DATA, Family: Extracted, Blocking: yes — tied to CQ-019; rebuild-backlog.md flags this as the highest-priority verification input for backlog item BL-008 (Accountability reporting))
+- **CQ-025** — Manual golden-master captures of MDI chrome drag/resize/maximize/z-order behavior (Type: DATA, Family: Extracted, Blocking: no)
+- **SQ-003** — Hosting/deployment model (Type: DECISION, Family: Standard bank, Blocking: yes)
+- **SQ-004** — Authentication/authorization approach (Type: TARGET-GAP, Family: Standard bank, Blocking: yes)
+- **SQ-005** — Existing production data (Type: SCOPE, Family: Standard bank, Blocking: yes)
+- **SQ-007** — Concurrent multi-user support (Type: SCOPE, Family: Standard bank, Blocking: no)
+- **SQ-008** — Browser/device/OS support matrix (Type: DECISION, Family: Standard bank, Blocking: no)
+- **SQ-010** — Non-functional targets (Type: DECISION, Family: Standard bank, Blocking: no)
+- **SQ-011** — Operational requirements (Type: SCOPE, Family: Standard bank, Blocking: no)
+- **SQ-012** — Fidelity default (Type: DECISION, Family: Standard bank, Blocking: no)
+- **UQ-001** — Should offline mode be supported? (Type: SCOPE, Family: Custom (per-repo), Blocking: no)
+- **UQ-002** — Do we need a mobile app eventually? (Type: DECISION, Family: Custom (per-repo), Blocking: no)
