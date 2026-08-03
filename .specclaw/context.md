@@ -1,6 +1,6 @@
 # Project Context
 
-_Last updated: 2026-08-03 — after "accountability-reporting"._
+_Last updated: 2026-08-03 — after "task-deletion"._
 
 ## Architecture Overview
 
@@ -37,7 +37,7 @@ a Meetings section: a record-meeting form and a read-only history list). A
 third page, `/accountability` (`accountability-reporting`), now exists too
 — see below for its shape. Tasks with no `ObjectiveId` render in a separate
 "Ungrouped" section, shown only when non-empty. Each task row is rendered
-by a shared `TaskRow.razor` component with four cells: its first `<td>`
+by a shared `TaskRow.razor` component with five cells: its first `<td>`
 shows title + deadline plus two conditional badges — an "OVERDUE" caption
 (`MudText`, `Color.Error`) when `Deadline` is in the past and `Status !=
 Done`, and a "⚑ discovered" caption (`MudText`, `Color.Warning`) when
@@ -126,6 +126,26 @@ Mud provider components (`MudThemeProvider`, `MudPopoverProvider`,
 `MudDialogProvider`, `MudSnackbarProvider`) living exactly once, app-wide,
 in this one file.
 
+`task-deletion` (BL-009) then added the rebuild's first data-removal
+feature and `TaskRow.razor`'s fifth cell — "Actions" — holding a single
+`MudIconButton` (`Icons.Material.Filled.Delete`, `Color.Error`) whose click
+handler calls `IDialogService.ShowMessageBoxAsync` with the exact legacy
+confirmation text (`"Delete task '{title}' and its checklist and notes?\nThis
+cannot be undone."`, title interpolated) and, only when the result is
+`true`, calls the new `PlanningService.DeleteTaskAsync` (the eighteenth
+method) and then raises a new `TaskDeleted` `EventCallback`, wired to
+`ProjectDetail.razor`'s existing `RefreshAsync` on both `<TaskRow>`
+usages — the same child-calls-service-then-notifies-parent shape
+`ChangeStatusAsync` established. This is the first feature to actually
+exercise `IDialogService`/`MudDialogProvider`, wired app-wide since
+`ui-modernization` but unused until now. No new route, entity, or
+migration — every cascade relationship the delete relies on
+(`ChecklistItem`, `ProgressNote`, `StatusChange`, `TaskOwner` → `WorkItem`,
+all `Cascade`) already existed in `InitialCreate`. Deleting a task is now
+possible; deleting a `Project` (BL-010) remains not-yet-built (see
+Coding Style & Conventions and Key Patterns for the architectural gap this
+item uncovered, which BL-010 will hit again one level deeper).
+
 ## Coding Style & Conventions
 
 - **.NET 8**, `<Nullable>enable</Nullable>` on both projects.
@@ -155,7 +175,7 @@ in this one file.
   against the legacy source (or a captured golden-master fixture), not just
   its pass/fail logic.
 - Business logic lives in `ManagerPlanner.Core.Services.PlanningService` —
-  one method per legacy operation (seventeen so far), each opening/disposing
+  one method per legacy operation (eighteen so far), each opening/disposing
   its own `PlanningDbContext` via the injected `IDbContextFactory` (see Key
   Patterns). Read-model DTOs (e.g. `ProjectSummary`, and now
   `AccountabilityRow`) live alongside it in `Services/Reports.cs`, matching
@@ -173,7 +193,7 @@ in this one file.
   `nested-checklist-items-and-grid-status-badges`), `GetMeetingsForProjectAsync`/
   `AddMeetingAsync` (methods twelve/thirteen, `meeting-recording-and-history`),
   `AddNoteAsync`/`GetNotesForTaskAsync` (methods fourteen/fifteen,
-  `progress-notes-and-promise-tracking`), and now
+  `progress-notes-and-promise-tracking`), and
   `GetAccountabilityReportAsync`/`GetAccountabilityForAllProjectsAsync`
   (methods sixteen/seventeen, `accountability-reporting`) are all verbatim
   ports with no signature deviation beyond the established
@@ -200,7 +220,51 @@ in this one file.
   or `Validation/` — confirmed by an empty `git diff` across the whole
   change; it is a pure Razor/markup restyle. `accountability-reporting`'s
   two new methods are pure reads with no user input to validate, so neither
-  touches `Validation/PlanningRules` at all.
+  touches `Validation/PlanningRules` at all. **`DeleteTaskAsync` (method
+  eighteen, `task-deletion`) breaks the run of "verbatim port, only the
+  `IDbContextFactory` wrapper differs" that every method from `ten` through
+  `seventeen` shared** — it needs its own explicit `.Include(w =>
+  w.Checklist)` that the real legacy method never had. See the dedicated
+  entry below for exactly why; it likewise touches no `PlanningRules` — a
+  delete has no input to validate beyond the existence check the legacy
+  body already had (`if (t is null) return;`).
+- **`DeleteTaskAsync` (method eighteen, `task-deletion`) is the rebuild's
+  first deliberate non-verbatim port of a legacy service method, and the
+  reason is a genuine architectural finding, not a style choice — get this
+  exactly right if touching delete/cascade code again.** The real legacy
+  body is a plain `var t = await _db.WorkItems.FindAsync(taskId); if (t is
+  null) return; _db.WorkItems.Remove(t); await _db.SaveChangesAsync();` —
+  no `Include` at all — and that body is **correct in the legacy desktop
+  apps**, which each hold **one long-lived `DbContext` for the whole
+  session**: by the time a user deletes a task, its checklist items are
+  almost always already loaded/tracked (from having been displayed on
+  screen), so EF Core's own client-side cascade fix-up — not the
+  database's — walks the self-referencing `ChecklistItem.ParentId`
+  (`Restrict`) relationship safely in memory before `SaveChangesAsync` ever
+  reaches the database. **This rebuild's `IDbContextFactory` pattern gives
+  every service call, including `DeleteTaskAsync`, a brand-new, untracked
+  `DbContext`** — so a byte-for-byte port of the legacy body throws
+  `SQLite Error 19: FOREIGN KEY constraint failed` the instant a task has a
+  nested (parent + child) checklist item, because the child checklist rows
+  are unknown to that fresh context and the database-level `Restrict` rule
+  on `ChecklistItem.ParentId` blocks the cascade outright (while
+  `ChecklistItem.WorkItemId`'s `Cascade` rule alone isn't enough to save
+  it). The fix — `.Include(w => w.Checklist)` before `Remove` — makes the
+  fresh context aware of every checklist row so the cascade (client-side or
+  database-side) can proceed. **This was confirmed by direct reproduction,
+  not assumed**: a live harness against a real `IDbContextFactory` context
+  reproduced the fix passing, and, as a negative control, reproduced the
+  literal legacy body throwing the exact FK error against an identical
+  fresh-context/nested-checklist scenario (see Key Patterns). **This is not
+  "the legacy code had a bug"** — it has none, under its own
+  one-`DbContext`-per-session model — **and it is not simply "the rebuild
+  had a bug that got fixed"** without the reason attached: the identical
+  source line behaves differently in each architecture purely because of
+  `DbContext` lifetime/tracking, not because either version is wrong in
+  isolation. **Expect the identical gap to resurface for `BL-010` (Project
+  deletion), one level deeper** (`Project` → `WorkItem` → `ChecklistItem`)
+  — plan that method's `Include` chain with this in mind before assuming a
+  straight port is safe.
 - **`GetAccountabilityReportAsync`'s promise-kept/broken boundary math is
   inclusive on one side, exclusive on the other, and both are load-bearing.**
   For a `Done` task, `PromiseKept = CompletedUtc.Value.Date <= promised.Date`
@@ -274,7 +338,14 @@ in this one file.
   `ManagerPlanner.Desktop/ViewModels/MainViewModel.cs:164`), not just one —
   this feature merges both legacy apps' note-taking surfaces onto the one
   `AddNoteAsync`/`GetNotesForTaskAsync` pair, so both callers needed
-  checking.
+  checking. `task-deletion` extends this to a *UI-text* fidelity check, not
+  just a validation/trim one: `TaskRow.razor`'s delete-confirmation dialog
+  text was cross-checked directly against the real legacy caller
+  (`ManagerPlanner.Desktop/ViewModels/MainViewModel.cs:239`), not just
+  `DeleteTaskAsync`'s own (trivial) service body — confirming the
+  interpolated title and the literal `\n` newline match verbatim, since the
+  service itself carries no confirmation text at all (that lives entirely
+  at the caller, same shape as `AddMeetingAsync`).
 
 ## Key Patterns
 
@@ -289,10 +360,18 @@ in this one file.
   `GetMeetingsForProjectAsync`/`AddMeetingAsync` (the twelfth/thirteenth,
   `meeting-recording-and-history`), `AddNoteAsync`/
   `GetNotesForTaskAsync` (the fourteenth/fifteenth,
-  `progress-notes-and-promise-tracking`), and now
+  `progress-notes-and-promise-tracking`),
   `GetAccountabilityReportAsync`/`GetAccountabilityForAllProjectsAsync`
-  (the sixteenth/seventeenth, `accountability-reporting`) all follow this
-  exactly — same as every method before them.
+  (the sixteenth/seventeenth, `accountability-reporting`), and now
+  `DeleteTaskAsync` (the eighteenth, `task-deletion`) all follow this
+  exactly — same as every method before them. **`DeleteTaskAsync` is also
+  the pattern's first real edge case**: precisely *because* every call gets
+  a fresh, untracked context, it needs an explicit `.Include(w =>
+  w.Checklist)` that a session-scoped `DbContext` (like legacy's) would not
+  have required — see Coding Style & Conventions for the full explanation.
+  Any future delete/cascade method should ask the same question: "does
+  this fresh context already have every row it needs tracked before I call
+  `Remove`?"
 - **EF Core migrations live inside `ManagerPlanner.Core`**, not `.Web` —
   via `PlanningDbContextFactory : IDesignTimeDbContextFactory<PlanningDbContext>`
   in `Core/Data/`. This lets `dotnet ef migrations add`/`database update`
@@ -304,7 +383,7 @@ in this one file.
   directory) — `src/ExecutivePlanning.Core/{Domain,Data,Services}` plus the
   two desktop shells' `ViewModels`/`Views`. The `.specclaw/analysis/*.md`
   docs are prose summaries, not a substitute for it. This has now paid off
-  eight times running: a mistyped `User.OwnedTasks` type and missed entity
+  nine times running: a mistyped `User.OwnedTasks` type and missed entity
   defaults in item 0; the exact `ProjectSummary.PercentComplete` rounding
   formula in item 1; the real end-to-end `Description`-trimming behavior
   living in the legacy ViewModel *caller* in `task-management`; in
@@ -328,14 +407,23 @@ in this one file.
   future note dates), cross-checked against the real legacy
   `PlanningValidation.cs` and both legacy desktop apps' ViewModel callers,
   plus captured golden-master fixtures `GM-005.json`/`GM-006.json`/
-  `GM-007.json`; and now, in `accountability-reporting`, confirming
+  `GM-007.json`; in `accountability-reporting`, confirming
   `AccountabilityRow`'s exact `Verdict` precedence order (the CQ-019 quirk:
   `IsOverdue` is checked and returns before a pending future
   `LatestPromisedDate` is ever consulted) and the inclusive/exclusive
   `PromiseKept`/`PromiseBroken` boundary comparisons, cross-checked directly
   against `../manager-planner/src/ExecutivePlanning.Core/Services/Reports.cs`
   and `PlanningService.cs`, plus golden-master fixtures `GM-008.json`
-  through `GM-018.json` as an independent second check. Read the legacy
+  through `GM-018.json` as an independent second check; and now, in
+  `task-deletion`, confirming that the real legacy `DeleteTaskAsync` body
+  genuinely has no `.Include` at all — and that this is *correct* fidelity
+  for the legacy's own long-lived-per-session `DbContext` model, not a
+  legacy bug — while this rebuild's fresh-context-per-call
+  `IDbContextFactory` pattern genuinely requires an explicit
+  `.Include(w => w.Checklist)` to avoid a real `FOREIGN KEY constraint
+  failed` error once a task has a nested checklist item, confirmed via a
+  live harness reproducing both the fix (passes) and, as a negative
+  control, the literal legacy body's failure (throws). Read the legacy
   source directly at every layer (entity, service, caller, and UI), not
   just the layer being ported. (`ui-modernization` remains the one change
   with no legacy-fidelity dimension at all — a pure rendering restyle with
@@ -350,9 +438,11 @@ in this one file.
   `nested-checklist-items-and-grid-status-badges` (no new `ThenInclude` was
   added for `Checklist.Assignee` — see the Ground-truth pattern above).
   `GetMeetingsForProjectAsync` (`meeting-recording-and-history`) has only a
-  single `.Include(m => m.Participant)`, and `GetNotesForTaskAsync`
+  single `.Include(m => m.Participant)`, `GetNotesForTaskAsync`
   (`progress-notes-and-promise-tracking`) has two flat `.Include`s
-  (`Author`, `Meeting`), so no split-query need has arisen at either site.
+  (`Author`, `Meeting`), and `DeleteTaskAsync` (`task-deletion`) has a
+  single `.Include(w => w.Checklist)` — none of these have needed
+  `.AsSplitQuery()` so far.
 - **A shared row/list-item component is worth extracting the moment two
   render sites in the *same* change need identical markup** — not
   speculatively ahead of need. `TaskRow.razor` was extracted during
@@ -389,7 +479,12 @@ in this one file.
   depended on it, then correctly switched to bubble-up the moment a new
   dependent (Accountability) appeared — **re-check this per feature every
   time a new page-level dependency is introduced**, not just once at the
-  feature's original build time.
+  feature's original build time. `task-deletion`'s new "Actions" cell
+  follows the original `ChangeStatusAsync` shape rather than the
+  local-state one — deleting a task removes it entirely, which always
+  affects the page's summary counts and every other section, so a full
+  bubble-up (`TaskDeleted` → `RefreshAsync`) was the only sensible choice,
+  with no per-feature judgment call needed the way Notes/Checklist required.
 - **Pass an already-loaded page-level list down as a component
   `[Parameter]` rather than re-querying inside a child component.**
   `ProjectDetail.razor` loads `_teamMembers`/`_meetings` once per page load;
@@ -428,10 +523,12 @@ in this one file.
   doesn't aggregate task-level data across them), so *that* half of the
   same backlog item earned the rebuild's first genuinely new top-level
   route (`Accountability.razor`) plus the first real use of
-  `MainLayout.razor`'s nav-menu extension point. When evaluating a future
-  capability, check per scope: if an existing page already covers the
-  data's scope, extend it; only add a new route for a scope nothing
-  existing already covers.
+  `MainLayout.razor`'s nav-menu extension point. `task-deletion` reverts to
+  the extend-the-existing-page default: its scope (per-task deletion) is
+  already inside `TaskRow.razor`'s scope, so it earned a new cell, not a
+  new route. When evaluating a future capability, check per scope: if an
+  existing page already covers the data's scope, extend it; only add a new
+  route for a scope nothing existing already covers.
 - **Enums render via their own `.ToString()` — no humanizer, no
   display-name converter, anywhere in the UI.** `MeetingType`'s dropdown
   (`@foreach (var type in Enum.GetValues<MeetingType>())` →
@@ -526,6 +623,23 @@ in this one file.
   produced live evidence for every criterion and the feature is entirely
   read-only display; this is a note about the *verify* step's method, not
   a claim that the change shipped without live verification anywhere.
+  **`task-deletion`'s `/specclaw:verify` step went further still**: rather
+  than trust the build's own T1/T2 verification runs, it wrote a *fresh*,
+  independent console harness (its own scratch project, not reusing the
+  build's) against a real `IDbContextFactory`-created context and a
+  brand-new temp SQLite file, seeded the exact nested-checklist/note/
+  status-change/owner shape, confirmed zero rows remained post-delete with
+  no FK exception, and then — as a **negative control** — reproduced the
+  literal legacy body (no `.Include`) against an identical scenario to
+  confirm it genuinely throws `SQLite Error 19: FOREIGN KEY constraint
+  failed`, ruling out the possibility that the harness simply doesn't
+  enforce FK constraints (which would have made the positive result
+  meaningless). Reach for this reproduce-the-failure-then-reproduce-the-fix
+  shape whenever a fix's claim is "this specific exception no longer
+  happens" — a passing run alone doesn't prove the original failure was
+  real. (Separately, a Visual Studio file lock blocked one build re-check
+  mid-verification — unrelated to the code itself, resolved by asking the
+  user to close VS; a one-off operational snag, not a new standing rule.)
 - **`tasks.md` line-wrapping silently breaks `specclaw-parse-tasks`** — hit
   twice now (`task-management`'s T2, then `task-status-transitions`'s T2
   again). If a task's title line or `Files:` line wraps across two lines
@@ -564,9 +678,13 @@ in this one file.
   reading. `accountability-reporting` extends this to a business-logic
   computation, not just validator messages: fixtures `GM-008`–`GM-018`
   independently confirmed `AccountabilityRow.Verdict`'s exact precedence
-  order and the `PromiseKept`/`PromiseBroken` boundary comparisons. Reach
-  for a golden-master fixture check whenever one already exists for the
-  logic being ported, whether it's a validator or a computed report.
+  order and the `PromiseKept`/`PromiseBroken` boundary comparisons.
+  `task-deletion` extends it again to a cascade-delete side effect: `GM-025`
+  independently confirmed that deleting a task with a nested checklist,
+  note, status change, and owner leaves zero rows across all four affected
+  tables. Reach for a golden-master fixture check whenever one already
+  exists for the logic being ported, whether it's a validator, a computed
+  report, or a delete's cascade footprint.
 - **When a coding agent starts a dev server for manual verification, it
   must stop only the exact PID it launched — never a name- or
   memory-filtered `taskkill`/`killall`.** `accountability-reporting`'s T3
@@ -620,7 +738,14 @@ in this one file.
   DTO (like `ProjectSummary`) built entirely from existing `WorkItem`/
   `ProgressNote` data; its diff touches only `Reports.cs`,
   `PlanningService.cs`, `ProjectDetail.razor`, a new `Accountability.razor`,
-  and `MainLayout.razor`.
+  and `MainLayout.razor`. `task-deletion` needed none either — every
+  cascade relationship it relies on (`ChecklistItem`, `ProgressNote`,
+  `StatusChange`, `TaskOwner` → `WorkItem`, all `Cascade`) already existed
+  in `InitialCreate`; its diff touches only `PlanningService.cs`,
+  `TaskRow.razor`, and `ProjectDetail.razor`. The schema was ready for
+  cascade deletion from day one — what `task-deletion` actually needed was
+  application-level care (the `.Include(w => w.Checklist)` fix), not a
+  schema change.
 - **.NET 8** — matches the legacy solution's target framework exactly, to
   avoid a version gap ahead of future fidelity comparisons.
 - **MudBlazor 9.7.0** as the component/CSS framework (`ui-modernization`)
@@ -629,16 +754,17 @@ in this one file.
   before this change (not even Bootstrap). Chosen over building custom CSS
   because it ships complete form controls (`MudSelect`, `MudDatePicker`),
   layout primitives (`MudLayout`/`MudAppBar`/`MudDrawer`), and dialog/
-  snackbar/popover infrastructure. (In the event, `accountability-reporting`
-  — the feature this rationale anticipated — turned out to need none of
-  the dialog/snackbar/popover machinery: both Accountability surfaces are
-  pure read-only `MudSimpleTable`s with no controls at all, confirmed by
-  AC17. That infrastructure remains available for a future feature that
-  does need it — e.g. the still-undecided delete/confirmation flows — not
-  wasted, just not yet exercised.) Its bundled CSS/JS
-  (`_content/MudBlazor/MudBlazor.min.css`/`.min.js`) is the only new
-  asset — no external CDN reference (e.g. Google Fonts) was added,
-  preserving the project's local-first character (matches the
+  snackbar/popover infrastructure. `accountability-reporting` — the
+  feature this rationale originally anticipated — turned out to need none
+  of the dialog/snackbar/popover machinery (both Accountability surfaces
+  are pure read-only `MudSimpleTable`s with no controls at all, confirmed
+  by AC17); **`task-deletion` is the feature that finally exercised it**:
+  its delete-confirmation flow is the first real use of
+  `IDialogService.ShowMessageBoxAsync`, calling into the `MudDialogProvider`
+  that `ui-modernization` wired app-wide but left unused until now. Its
+  bundled CSS/JS (`_content/MudBlazor/MudBlazor.min.css`/`.min.js`) is the
+  only new asset — no external CDN reference (e.g. Google Fonts) was
+  added, preserving the project's local-first character (matches the
   SQLite-only backend's no-external-network-dependency pattern). Version
   left unpinned in the design step by choice but resolved to `9.7.0` at
   restore time and is now pinned in `ManagerPlanner.Web.csproj`.
@@ -653,9 +779,12 @@ in this one file.
   `Success`, `"BROKE promise"` → `Error`, `"Overdue (no promise)"` →
   `Warning`, `"Promise pending"` → `Info`, anything else → `Default`),
   rendered via `MudChip` on both the per-project and all-projects
-  Accountability tables. Reach for MudBlazor's built-in palette
-  (`Color.Error`/`Warning`/`Success`/etc.) for any future meaning-carrying
-  indicator rather than introducing ad hoc colors.
+  Accountability tables. `task-deletion` follows the same rule for the new
+  delete icon button (`Color.Error`, matching the destructive-action
+  convention already used for the "OVERDUE" caption). Reach for
+  MudBlazor's built-in palette (`Color.Error`/`Warning`/`Success`/etc.) for
+  any future meaning-carrying indicator rather than introducing ad hoc
+  colors.
 
 ## Constraints
 
@@ -685,6 +814,26 @@ in this one file.
   fields — a proposal-approved decision, not an oversight. Don't
   reintroduce the coarse path as a second add-task route without a fresh
   product decision.
+- **Don't revert `DeleteTaskAsync` to a literal legacy port (plain
+  `FindAsync` + `Remove`, with no `.Include`).** This rebuild's
+  fresh-`DbContext`-per-call pattern requires `.Include(w => w.Checklist)`
+  before removing — omitting it makes a task with a nested (parent + child)
+  checklist item throw `SQLite Error 19: FOREIGN KEY constraint failed`,
+  confirmed by direct reproduction of both the fix (passes) and the
+  literal legacy body (fails) against an identical scenario. This is
+  **not** "the legacy code had a bug" (it's correct under its own
+  long-lived-session `DbContext` model) and **not** a simple "rebuild bug,
+  now fixed" — see the dedicated Coding Style & Conventions entry for the
+  fresh-context-vs-long-lived-context reason both versions are individually
+  correct. Apply the same scrutiny to `BL-010` (Project deletion) before
+  assuming a straight port of *its* legacy body is safe — the identical gap
+  recurs one level deeper (`Project` → `WorkItem` → `ChecklistItem`).
+- **Don't add a soft-delete flag, undo affordance, or a `Reason` field to
+  task deletion.** `DeleteTaskAsync` is a hard delete, exactly like the
+  real legacy method — no `IsDeleted` column, no "restore" UI, no reason
+  capture — matching both the confirmed legacy caller and the existing
+  schema. Introduce any of these only via a fresh, explicit product
+  decision, not as an incremental nicety bolted onto this feature.
 - **Don't add a `Reason` input or a confirmation dialog to the status-change
   buttons.** `task-status-transitions` confirmed by reading both legacy
   call sites directly (`ExecutivePlanning.Desktop`'s `SetStatusAsync` and
@@ -692,10 +841,11 @@ in this one file.
   `Reason`, and neither shows a confirmation before a status change
   (unlike task/project deletion, items 9/10). `StatusChange.Reason` stays
   in the schema, unset, until a future item deliberately decides to expose
-  it. (`MudDialog`/`IDialogService` is the intended mechanism once
-  deletion — items 9/10 — actually ships a confirmation dialog;
-  `ui-modernization` established the provider is wired but didn't use it
-  for anything yet.)
+  it. (`MudDialog`/`IDialogService` was first actually exercised by
+  `task-deletion` (item 9)'s delete-confirmation dialog —
+  `ui-modernization` only wired the provider without using it. Project
+  deletion (item 10) is expected to reuse the same
+  `ShowMessageBoxAsync` shape.)
 - **Don't add per-status button disabling to `TaskRow`'s status controls.**
   All four buttons (Not started/In progress/Blocked/Mark done) stay
   visible and clickable regardless of the row's current status, matching
@@ -713,21 +863,23 @@ in this one file.
   full `MudTable` rewrite would be a real, higher-risk restructuring, not
   a drop-in upgrade. The Meetings history table
   (`meeting-recording-and-history`), the Notes history list
-  (`progress-notes-and-promise-tracking`), and now both Accountability
+  (`progress-notes-and-promise-tracking`), and both Accountability
   tables (`accountability-reporting`) all follow the same rule — a plain
   read-only `MudSimpleTable`/list, not `MudTable`, despite the latter's
   extra sort-driven column.
-- **No UI creates or deletes a checklist item, or edits its assignee —
-  `ToggleChecklistItemAsync` is the only checklist mutation that exists.**
-  `nested-checklist-items-and-grid-status-badges` confirmed exactly 11
-  `PlanningService` methods existed at that point (10 existing + this
-  one); `GetMeetingsForProjectAsync`/`AddMeetingAsync`, `AddNoteAsync`/
-  `GetNotesForTaskAsync`, and now `GetAccountabilityReportAsync`/
-  `GetAccountabilityForAllProjectsAsync` (`accountability-reporting`) were
-  added since (seventeen total), but none of them touch checklist items —
-  adding create/delete/assignee-edit for checklist items remains a
-  separate, not-yet-decided backlog item, not something to bolt onto
-  `ChecklistTree` incidentally.
+- **No UI creates or deletes a checklist item directly, or edits its
+  assignee — `ToggleChecklistItemAsync` is the only *checklist-level*
+  mutation that exists.** `nested-checklist-items-and-grid-status-badges`
+  confirmed exactly 11 `PlanningService` methods existed at that point (10
+  existing + this one); `GetMeetingsForProjectAsync`/`AddMeetingAsync`,
+  `AddNoteAsync`/`GetNotesForTaskAsync`, `GetAccountabilityReportAsync`/
+  `GetAccountabilityForAllProjectsAsync` (`accountability-reporting`), and
+  now `DeleteTaskAsync` (`task-deletion`) were added since (eighteen
+  total) — `DeleteTaskAsync` cascades away a task's *entire* checklist as
+  a side effect of deleting the owning `WorkItem`, but still adds no
+  direct create/delete/assignee-edit capability for an individual
+  checklist item; that remains the same separate, not-yet-decided backlog
+  item, not something to bolt onto `ChecklistTree` incidentally.
 - **Don't add `.ThenInclude(c => c.Assignee)` under the `Checklist`
   collection in `GetPlannerForProjectAsync`/`GetUngroupedTasksForProjectAsync`
   to "complete" the Include chain.** The real legacy
@@ -756,7 +908,7 @@ in this one file.
   (`ProjectDetail.razor`'s section or `Accountability.razor`). Both are
   pure read-only display by design (confirmed AC17); a manual refresh
   isn't needed because `RefreshAsync` already reloads the table after
-  every relevant mutation (status change, note add).
+  every relevant mutation (status change, note add, and now task delete).
 - **`git.strategy: branch-per-change`'s `finalize` step auto-merges the
   feature branch into `master` locally** — it does not leave the branch
   open for a separate GitHub PR. If a real reviewable PR is wanted for a
@@ -765,8 +917,8 @@ in this one file.
   `git push` is the only option left). Confirmed a sixth time on
   `nested-checklist-items-and-grid-status-badges`, a seventh time on
   `meeting-recording-and-history`, an eighth time on
-  `progress-notes-and-promise-tracking`, and a ninth time on
-  `accountability-reporting`.
+  `progress-notes-and-promise-tracking`, a ninth time on
+  `accountability-reporting`, and a tenth time on `task-deletion`.
 - **Don't add a `ValidationException`/`PlanningRules` check to
   `AddMeetingAsync`.** The real legacy service has none; the empty-title
   check and `.Trim()` belong at the caller (`ProjectDetail.razor`),
@@ -795,37 +947,45 @@ in this one file.
   creation (`AddNoteAsync`) and read (`GetNotesForTaskAsync`);
   `accountability-reporting` (BL-008, which depended on this one) added
   the Accountability/`Verdict` view but still no note edit/delete UI —
-  that remains a separate, not-yet-built capability.
+  that remains a separate, not-yet-built capability. Note that deleting the
+  *owning task* (`task-deletion`) cascades away its notes too, but that is
+  whole-task deletion, not a note-level edit/delete capability.
 
 ## Recent Decisions
 
-1. **Accountability reporting shipped as a scope-driven exception to the
+1. **`DeleteTaskAsync` deliberately deviates from a literal legacy port by
+   adding `.Include(w => w.Checklist)` before removing — because this
+   rebuild's per-call fresh `IDbContextFactory` context (unlike legacy's
+   one long-lived session `DbContext`) can't rely on prior tracking to
+   safely cascade a self-referencing `ChecklistItem.ParentId` (`Restrict`)
+   delete.** Confirmed by a live harness reproducing both the fix (passes)
+   and, as a negative control, the literal legacy body (throws `SQLite
+   Error 19: FOREIGN KEY constraint failed`) against an identical
+   nested-checklist scenario. Both versions are individually correct for
+   their own `DbContext`-lifetime model — this is a fresh-context-vs-
+   long-lived-context finding, not a legacy bug or a simple rebuild bug
+   (task-deletion, 2026-08-03).
+2. **`BL-010` (Project deletion) will hit the identical fresh-context
+   cascade gap one level deeper (`Project` → `WorkItem` →
+   `ChecklistItem`)** — its `Include` chain needs to be planned with this
+   in mind from the start, not discovered mid-build the way `task-deletion`
+   discovered it (task-deletion, 2026-08-03).
+3. **`task-deletion` is the rebuild's first delete feature and the first
+   real exercise of `IDialogService.ShowMessageBoxAsync`**, wired app-wide
+   since `ui-modernization` but unused until now; its confirmation dialog
+   text was confirmed verbatim against the real legacy
+   `MainViewModel.DeleteTask` caller, including the literal `\n` newline
+   (task-deletion, 2026-08-03).
+4. **Accountability reporting shipped as a scope-driven exception to the
    "extend an existing page" pattern.** The all-projects view earned the
    rebuild's first genuinely new top-level route (`Accountability.razor`
    + a `MainLayout.razor` `MudNavLink`) because no existing page's scope
    already spanned every project, while the single-project view landed as
    a `ProjectDetail.razor` section exactly like every prior backlog item
    (accountability-reporting, 2026-08-03).
-2. **`AccountabilityRow.Verdict`'s precedence order — `PromiseKept` →
+5. **`AccountabilityRow.Verdict`'s precedence order — `PromiseKept` →
    `PromiseBroken` → `IsOverdue` → `LatestPromisedDate.HasValue` → "On
    track" — ported verbatim, preserving the CQ-019 quirk** (an overdue task
    with a still-future promised date reports "Overdue (no promise)", never
    "Promise pending"), confirmed by golden-master fixtures `GM-008`–`GM-012`
    (accountability-reporting, 2026-08-03).
-3. **`TaskRow`'s Notes capability now bubbles up via a new `NoteAdded`
-   `EventCallback`, wired to `ProjectDetail.RefreshAsync`** — reversing the
-   earlier local-state-only decision now that the page's new Accountability
-   section derives from note/promise data (accountability-reporting,
-   2026-08-03).
-4. **`AddNoteAsync` ported with full service-layer validation
-   (`PlanningRules.ValidateNoteText`/`ValidateNoteDate`) — unlike
-   `AddMeetingAsync`'s caller-only validation.** Confirmed by reading the
-   real legacy service body directly; don't assume a uniform
-   validation-shape across similarly-named `Add*Async` methods
-   (progress-notes-and-promise-tracking, 2026-08-03).
-5. **Three `PlanningRules` rejection-message strings (note-too-long,
-   backdated, future-dated) corrected to verbatim legacy text**, cross-checked
-   against both the real legacy source and captured golden-master fixtures
-   `GM-005.json`/`GM-006.json`/`GM-007.json` — the validators' logic was
-   already correct; only the literal message strings had drifted
-   (progress-notes-and-promise-tracking, 2026-08-03).
