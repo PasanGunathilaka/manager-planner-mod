@@ -106,6 +106,9 @@
     [Parameter]
     public List<Meeting> Meetings { get; set; } = new();
 
+    [Parameter]
+    public EventCallback NoteAdded { get; set; }
+
     private string StatusText => WorkItem.Status switch
     {
         WorkItemStatus.NotStarted => "Not started",
@@ -170,6 +173,7 @@
             _noteErrorMessage = null;
 
             _notes = await PlanningService.GetNotesForTaskAsync(WorkItem.Id);
+            await NoteAdded.InvokeAsync();
         }
         catch (ManagerPlanner.Core.Validation.ValidationException ex)
         {

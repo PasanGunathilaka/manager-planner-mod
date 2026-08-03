@@ -250,4 +250,91 @@ public class PlanningService
             .OrderByDescending(n => n.NoteDate)
             .ToListAsync();
     }
+
+    /// <summary>
+    /// Builds the promised-vs-delivered accountability report for a project. For each task it takes
+    /// the most recent promise note and compares it against the task's actual status/completion.
+    /// </summary>
+    public async Task<List<AccountabilityRow>> GetAccountabilityReportAsync(int projectId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+
+        var now = DateTime.UtcNow;
+
+        var tasks = await db.WorkItems
+            .Include(t => t.Assignee)
+            .Include(t => t.Project)
+            .Include(t => t.Notes)
+            .Where(t => t.ProjectId == projectId)
+            .ToListAsync();
+
+        var rows = new List<AccountabilityRow>();
+        foreach (var t in tasks)
+        {
+            var latestPromise = t.Notes
+                .Where(n => n.IsPromise && n.PromisedDate.HasValue)
+                .OrderByDescending(n => n.CreatedUtc)
+                .FirstOrDefault();
+
+            var row = new AccountabilityRow
+            {
+                WorkItemId = t.Id,
+                TaskTitle = t.Title,
+                ProjectName = t.Project?.Name ?? string.Empty,
+                AssigneeName = t.Assignee?.FullName ?? "(unassigned)",
+                Status = t.Status,
+                Deadline = t.Deadline,
+                CompletedUtc = t.CompletedUtc,
+                LatestPromisedDate = latestPromise?.PromisedDate,
+                LatestPromiseText = latestPromise?.Text,
+                LatestPromiseRecordedUtc = latestPromise?.CreatedUtc
+            };
+
+            row.IsOverdue = t.Deadline.HasValue
+                            && t.Deadline.Value < now
+                            && t.Status != WorkItemStatus.Done;
+
+            if (latestPromise?.PromisedDate is DateTime promised)
+            {
+                if (t.Status == WorkItemStatus.Done)
+                {
+                    // Delivered — kept only if completed on or before the promised date.
+                    row.PromiseKept = t.CompletedUtc.HasValue && t.CompletedUtc.Value.Date <= promised.Date;
+                    row.PromiseBroken = !row.PromiseKept;
+                }
+                else
+                {
+                    // Not delivered — broken once the promised date has passed.
+                    row.PromiseBroken = promised.Date < now.Date;
+                }
+            }
+
+            rows.Add(row);
+        }
+
+        // Most at-risk first: broken promises, then overdue, then the rest.
+        return rows
+            .OrderByDescending(r => r.PromiseBroken)
+            .ThenByDescending(r => r.IsOverdue)
+            .ThenBy(r => r.Deadline ?? DateTime.MaxValue)
+            .ToList();
+    }
+
+    /// <summary>Accountability report across every project, most-at-risk first.</summary>
+    public async Task<List<AccountabilityRow>> GetAccountabilityForAllProjectsAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+
+        var rows = new List<AccountabilityRow>();
+        var projectIds = await db.Projects.OrderBy(p => p.Name).Select(p => p.Id).ToListAsync();
+        foreach (var id in projectIds)
+            rows.AddRange(await GetAccountabilityReportAsync(id));
+
+        return rows
+            .OrderByDescending(r => r.PromiseBroken)
+            .ThenByDescending(r => r.IsOverdue)
+            .ThenBy(r => r.ProjectName)
+            .ThenBy(r => r.Deadline ?? DateTime.MaxValue)
+            .ToList();
+    }
 }

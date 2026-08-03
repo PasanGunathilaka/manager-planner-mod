@@ -155,7 +155,7 @@ else
                     <tbody>
                         @foreach (var task in objective.Tasks)
                         {
-                            <TaskRow WorkItem="task" StatusChanged="RefreshAsync" Meetings="_meetings" />
+                            <TaskRow WorkItem="task" StatusChanged="RefreshAsync" Meetings="_meetings" NoteAdded="RefreshAsync" />
                         }
                     </tbody>
                 </MudSimpleTable>
@@ -170,7 +170,7 @@ else
             <tbody>
                 @foreach (var task in _ungroupedTasks)
                 {
-                    <TaskRow WorkItem="task" StatusChanged="RefreshAsync" Meetings="_meetings" />
+                    <TaskRow WorkItem="task" StatusChanged="RefreshAsync" Meetings="_meetings" NoteAdded="RefreshAsync" />
                 }
             </tbody>
         </MudSimpleTable>
@@ -242,6 +242,45 @@ else
             </tbody>
         </MudSimpleTable>
     }
+
+    <MudText Typo="Typo.h5">Accountability</MudText>
+
+    @if (_accountabilityRows is null)
+    {
+        <p>Loading accountability&hellip;</p>
+    }
+    else if (_accountabilityRows.Count == 0)
+    {
+        <MudText>No tasks yet.</MudText>
+    }
+    else
+    {
+        <MudSimpleTable Hover="true" Dense="true">
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Assignee</th>
+                    <th>Status</th>
+                    <th>Deadline</th>
+                    <th>Promised</th>
+                    <th>Verdict</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _accountabilityRows)
+                {
+                    <tr>
+                        <td>@row.TaskTitle</td>
+                        <td>@row.AssigneeName</td>
+                        <td>@row.Status</td>
+                        <td>@(row.Deadline?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td>@(row.LatestPromisedDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td><MudChip T="string" Color="@VerdictColor(row.Verdict)" Size="Size.Small">@row.Verdict</MudChip></td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
 }
 
 @code {
@@ -270,6 +309,8 @@ else
     private DateTime? _newMeetingDate;
     private string? _meetingErrorMessage;
 
+    private List<AccountabilityRow>? _accountabilityRows;
+
     protected override async Task OnInitializedAsync()
     {
         _summary = await PlanningService.GetProjectSummaryAsync(Id);
@@ -277,6 +318,7 @@ else
         _teamMembers = await PlanningService.GetTeamMembersAsync();
         _ungroupedTasks = await PlanningService.GetUngroupedTasksForProjectAsync(Id);
         _meetings = await PlanningService.GetMeetingsForProjectAsync(Id);
+        _accountabilityRows = await PlanningService.GetAccountabilityReportAsync(Id);
     }
 
     private async Task RefreshAsync()
@@ -286,7 +328,17 @@ else
         _teamMembers = await PlanningService.GetTeamMembersAsync();
         _ungroupedTasks = await PlanningService.GetUngroupedTasksForProjectAsync(Id);
         _meetings = await PlanningService.GetMeetingsForProjectAsync(Id);
+        _accountabilityRows = await PlanningService.GetAccountabilityReportAsync(Id);
     }
+
+    private Color VerdictColor(string verdict) => verdict switch
+    {
+        "Kept promise" => Color.Success,
+        "BROKE promise" => Color.Error,
+        "Overdue (no promise)" => Color.Warning,
+        "Promise pending" => Color.Info,
+        _ => Color.Default
+    };
 
     private async Task AddObjectiveAsync()
     {

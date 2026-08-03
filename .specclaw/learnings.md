@@ -380,3 +380,18 @@ Mid-build, another process modified .specclaw/analysis/clarifications.md and cre
 If concurrent specclaw sessions on the same repo become common, prefer git.strategy: worktree-per-change so each change's build runs in its own isolated working tree instead of the shared one.
 
 ---
+
+## [L26] pattern — specclaw-build setup deliberately branches new feature br...
+
+**When:** 2026-08-03 06:59 UTC
+**Category:** pattern
+**Priority:** medium
+**Status:** pending
+
+### Detail
+specclaw-build setup deliberately branches new feature branches from origin/<base_branch>, not local <base_branch>'s HEAD (to avoid accidentally stacking unpushed local work) -- so a locally-committed but unpushed commit (this time, the accountability-reporting planning-docs commit made right after /specclaw:plan, following L24's own recommendation) is silently absent from the new branch. specclaw-build setup gave no warning because origin/master was reachable and used without comparing it against local master.
+
+### Action
+Push immediately after any commit made between /specclaw:plan and /specclaw:build (not just right before finalize) -- or teach specclaw-build setup to warn when local <base_branch> is ahead of origin/<base_branch> before branching.
+
+---
