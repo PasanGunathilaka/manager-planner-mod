@@ -6,8 +6,11 @@
 ## Technical Approach
 
 1. Add `DeleteTaskAsync(taskId)` to the existing `ManagerPlanner.Core/
-   Services/PlanningService.cs` (no new file), ported verbatim, following
-   the established `IDbContextFactory<PlanningDbContext>` pattern.
+   Services/PlanningService.cs` (no new file), following the established
+   `IDbContextFactory<PlanningDbContext>` pattern — **not a byte-for-byte
+   port**; it must `.Include(w => w.Checklist)` before removing (see Key
+   Decision 6, discovered during T1's build, not anticipated at design
+   time).
 2. Extend `TaskRow.razor` with a new "Actions" cell: a small
    `MudIconButton` (`Icons.Material.Filled.Delete`, `Color.Error`), whose
    click handler calls `IDialogService.ShowMessageBoxAsync` with the exact
@@ -98,6 +101,31 @@ None. No HTTP/JSON API — the component calls `PlanningService` directly.
    `TaskRow` directly; the Delete button follows the same shape rather
    than reviving the legacy's selection-based interaction model this
    rebuild has consistently dropped.
+6. **`DeleteTaskAsync` must `.Include(w => w.Checklist)` before removing
+   — a required deviation from the legacy body, not a stylistic choice.**
+   Discovered by direct reproduction during T1's build: a literal
+   `FindAsync` + `Remove` (the legacy's exact code) throws `SQLite Error
+   19: FOREIGN KEY constraint failed` against a fresh, untracked
+   `DbContext` whenever the task has a nested checklist item (parent +
+   child) — confirmed against both this rebuild's code *and* the real
+   legacy `PlanningService` class, run through an identical fresh-context
+   harness; the legacy method only "works" in the desktop app because its
+   `PlanningService` holds one `DbContext` for the whole app session, so
+   checklist rows added earlier are already tracked when delete runs,
+   letting EF Core's client-side cascade (which orders a self-referencing
+   tree correctly) substitute for the DB's own cascade. This rebuild's
+   `IDbContextFactory` gives every call a fresh context (ADR-0002) — no
+   call ever benefits from that same-session tracking — so the
+   `.Include` is not optional. Confirmed as the fix: with it, EF Core
+   tracks the checklist subtree and deletes it in the correct order
+   itself; without it, SQLite's raw cascade cannot safely resolve
+   `ChecklistItem.ParentId`'s `Restrict` self-reference together with
+   `WorkItemId`'s `Cascade` in one untracked delete. `ProgressNote`/
+   `StatusChange`/`TaskOwner` have no self-reference and cascade correctly
+   from a cold context without being included. **This same gap will apply
+   to `BL-010` (Project deletion)** one level deeper (`Project` →
+   `WorkItem` → `ChecklistItem`) — its future design must not assume a
+   plain `Remove` is safe either.
 
 ## Grounding sources
 

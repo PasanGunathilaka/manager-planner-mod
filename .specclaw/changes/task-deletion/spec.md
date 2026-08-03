@@ -21,11 +21,30 @@ migration changes: every cascade relationship this item depends on
 
 ### Functional Requirements
 
-1. **FR1 — `DeleteTaskAsync(taskId)`.** Ported exactly from
-   `../manager-planner/src/ExecutivePlanning.Core/Services/PlanningService.cs:73-79`:
-   `var t = await db.WorkItems.FindAsync(taskId); if (t is null) return;
-   db.WorkItems.Remove(t); await db.SaveChangesAsync();` — a silent no-op
-   if the task no longer exists, not an exception.
+1. **FR1 — `DeleteTaskAsync(taskId)`.** Same observable contract as
+   `../manager-planner/src/ExecutivePlanning.Core/Services/PlanningService.cs:73-79`
+   (find, no-op if missing, remove, save), **but not a byte-for-byte port**
+   — it must load `.Include(w => w.Checklist)` before removing. Confirmed
+   by direct reproduction: a plain `FindAsync` + `Remove` (the legacy's
+   literal body) throws `SQLite Error 19: FOREIGN KEY constraint failed`
+   against a fresh `IDbContextFactory`-created context whenever the task
+   has a nested checklist item (a parent plus a child) — every call in
+   this app gets a fresh context (ADR-0002), so this is not an edge case,
+   it is the primary scenario `GM-025`/AC2 requires. The legacy method
+   works in the desktop app only because its `PlanningService` holds one
+   long-lived `DbContext` for the whole session, so entities added earlier
+   in that session are already tracked when delete runs — EF Core's own
+   client-side cascade (which orders a self-referencing tree correctly)
+   takes over instead of SQLite's raw DB-level cascade, which cannot
+   safely resolve `ChecklistItem.ParentId`'s `Restrict` self-reference
+   *and* `WorkItemId`'s `Cascade` from a cold, untracked context (this is
+   exactly the failure mode the schema comment "Restrict (children
+   removed in app code) to avoid multiple cascade paths on SQLite"
+   describes — for this rebuild's per-call-fresh-context architecture,
+   "removed in app code" must mean the `.Include`, not an assumption the
+   DB alone will sort it out). `ProgressNote`/`StatusChange`/`TaskOwner`
+   have no such self-reference and cascade correctly from a cold context
+   without needing to be included.
 2. **FR2 — A "Delete" icon button on each `TaskRow`**, in a new, minimal
    "Actions" cell — this rebuild has no "select a task first" concept
    anywhere (every prior item — status, checklist, notes — already acts
@@ -122,13 +141,22 @@ Each criterion must pass for the change to be considered complete.
   row type these items introduced.
 - **Blocks:** none — `BL-010` (Project deletion) is a separate,
   independent cascade path (`Project`→everything), not dependent on this
-  item.
+  item. **However**, `BL-010`'s own `DeleteProjectAsync` will cascade
+  through `WorkItem` to the same self-referencing `ChecklistItem` tree
+  this item just discovered breaks from a cold context — its future
+  proposal/design must account for the same `.Include` requirement (one
+  level deeper: `Project` → `WorkItem` → `ChecklistItem`), not assume a
+  plain `FindAsync` + `Remove` is safe there either.
 
 ## Notes
 
-No open questions carried over from the proposal — both potential ones
-were resolved by direct evidence: the confirmation text is quoted
-verbatim from the real legacy caller, and `GM-033`'s `TaskOwner`→`User`
-cascade is confirmed already correctly configured in the existing schema,
-requiring no new service method since this rebuild has no user-deletion
-feature to build.
+One open question from the proposal needed revision during planning, not
+carried forward as originally stated: the proposal assumed `DeleteTaskAsync`
+would be a byte-for-byte port. Direct reproduction against this rebuild's
+actual `IDbContextFactory`-per-call architecture proved that assumption
+wrong — see FR1 for the full explanation and fix (`.Include(w =>
+w.Checklist)`). The confirmation text is still quoted verbatim from the
+real legacy caller, and `GM-033`'s `TaskOwner`→`User` cascade is still
+confirmed already correctly configured in the existing schema, requiring
+no new service method since this rebuild has no user-deletion feature to
+build — those two conclusions stand as proposed.
