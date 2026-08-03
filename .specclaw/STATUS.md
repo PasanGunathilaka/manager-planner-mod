@@ -1,7 +1,7 @@
 # 🦞 SpecClaw Dashboard
 
 **Project:** manager-planner-mod
-**Last Updated:** 2026-08-03 08:58 UTC
+**Last Updated:** 2026-08-03 09:45 UTC
 
 ## Active Changes
 
@@ -13,14 +13,14 @@
 - 🔨 **progress-notes-and-promise-tracking** — 2/3 tasks (66%) | 0 failed
 - 🔨 **project-management** — 5/6 tasks (83%) | 0 failed
 - 🔨 **scaffold-blazor-solution** — 7/8 tasks (87%) | 0 failed
+- 🔨 **task-deletion** — 0/3 tasks (0%) | 0 failed
 - 🔨 **task-management** — 2/3 tasks (66%) | 0 failed
 - 🔨 **task-status-transitions** — 2/3 tasks (66%) | 0 failed
 - 🔨 **ui-modernization** — 5/6 tasks (83%) | 0 failed
 
 ## Pending Proposals
 
-
-- 📋 **task-deletion** — proposal ready, awaiting planning
+_None._
 
 ## Recently Completed
 
@@ -28,6 +28,6 @@ _None._
 
 ## Stats
 
-- **Total changes:** 10
-- **Active:** 10
+- **Total changes:** 11
+- **Active:** 11
 - **Completed:** 0

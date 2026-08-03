@@ -8,19 +8,19 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| Proposal | 🟡 Draft | Awaiting review — rebuild-backlog item 9 (BL-009) |
-| Spec | ⚪ Pending | |
-| Design | ⚪ Pending | |
-| Tasks | ⚪ Pending | |
-| Build | ⚪ Pending | |
+| Proposal | 🟢 Approved | Approved by proceeding to `/specclaw:plan` |
+| Spec | 🟢 Complete | 5 FRs, 3 NFRs, 8 ACs, 4 edge cases |
+| Design | 🟢 Complete | 1 new `PlanningService` method, `TaskRow` gains an Actions cell (Delete + confirm dialog) and a `TaskDeleted` callback |
+| Tasks | 🟢 Complete | 2 tasks / 2 waves |
+| Build | ⚪ Pending | Run `/specclaw:build` next |
 | Verify | ⚪ Pending | |
 
 ## Task Progress
 
-**Completed:** 0 / 0
+**Completed:** 0 / 2
 **Failed:** 0
 
-Not yet planned.
+Planned, not yet built.
 
 ## Agent Runs
 
