@@ -410,3 +410,18 @@ T3's coding agent (verifying the new /accountability page) was flagged by the ha
 When instructing a coding agent to start/stop a dev server for manual verification, explicitly require it to capture and kill only the exact PID it launched (e.g. via the shell's own job-control/process-handle, or a written pidfile), never a name/memory-filtered killall/taskkill; consider stating this as a standing constraint in the agent-guardrails template used by /specclaw:build-context.
 
 ---
+
+## [L28] design_gap — A verbatim port of legacy DeleteTaskAsync (plain FindAsyn...
+
+**When:** 2026-08-03 10:28 UTC
+**Category:** design_gap
+**Priority:** high
+**Status:** pending
+
+### Detail
+A verbatim port of legacy DeleteTaskAsync (plain FindAsync + Remove + SaveChangesAsync) throws SQLite Error 19 (FOREIGN KEY constraint failed) in this rebuild whenever the task has a nested checklist item (parent+child), even though the identical legacy code passes its own xUnit test. Root cause: ChecklistItem.ParentId is Restrict (self-reference) while ChecklistItem.WorkItemId is Cascade -- SQLite's own DB-level cascade cannot safely resolve deleting a self-referencing tree via an untracked/cold DbContext (it tries to delete the parent-checklist-item row while the child-checklist-item row -- also being cascade-deleted via the same WorkItemId cascade -- still references it via ParentId, and Restrict blocks that). The legacy desktop app never hits this because its PlanningService holds ONE long-lived DbContext for the whole session, so checklist rows added earlier in that session are already tracked -- EF Core's own client-side cascade (which orders self-referencing deletes correctly) substitutes for the DB's raw cascade. This rebuild's IDbContextFactory gives every service call a brand-new, untracked context (ADR-0002), so that masking effect never applies here -- confirmed by reproducing the exact same failure against the real legacy PlanningService class run through an equivalent fresh-context harness. Fixed in task-deletion's DeleteTaskAsync by loading .Include(w => w.Checklist) before Remove, so EF Core tracks and correctly orders the self-referencing subtree itself.
+
+### Action
+Before assuming any legacy PlanningService method is a safe verbatim port for this IDbContextFactory-per-call architecture, check whether it deletes/reads across a self-referencing or otherwise order-sensitive relationship (ChecklistItem.ParentId is the only current self-reference) -- if so, verify behavior with a fresh, untracked context specifically, not just a shared-context test, before trusting the port. BL-010 (Project deletion) will hit this same gap one level deeper (Project -> WorkItem -> ChecklistItem) and needs the same .Include treatment; flag this explicitly in that item's future proposal/design.
+
+---

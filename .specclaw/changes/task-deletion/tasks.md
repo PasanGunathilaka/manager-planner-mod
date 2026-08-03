@@ -17,7 +17,7 @@ project deletion, a `DeleteUserAsync` method, undo/soft-delete, or a
 
 ### Wave 1 — Core business logic
 
-- [ ] `T1` — Add `DeleteTaskAsync` to `PlanningService`
+- [x] `T1` — Add `DeleteTaskAsync` to `PlanningService`
   - Files: `src/ManagerPlanner.Core/Services/PlanningService.cs`
   - Estimate: small
   - Depends: none
