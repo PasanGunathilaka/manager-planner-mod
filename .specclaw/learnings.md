@@ -335,3 +335,48 @@ specclaw-verify update-status's row-replace logic matches any markdown table lin
 Scope specclaw-verify update-status's row match to the '## Progress' table section (e.g. stop matching once a later '## ' heading is reached, or anchor on the full '| Verify | <status-emoji> Pending |' pattern instead of a bare '| Verify' prefix) so it can't collide with an unrelated table using the same row label.
 
 ---
+
+## [L23] best_practice — Tracing the full legacy caller-to-service chain (not just...
+
+**When:** 2026-07-31 12:04 UTC
+**Category:** best_practice
+**Priority:** low
+**Status:** pending
+
+### Detail
+Tracing the full legacy caller-to-service chain (not just the service signature) correctly predicted that AddMeetingAsync needed page-level validation even though the service itself validates nothing -- confirmed by reading MainWindowViewModel.cs directly rather than assuming every Add* method follows the same ValidationException pattern.
+
+### Action
+Keep applying this same caller-trace check to every future ported method before assuming its validation shape from the service signature alone.
+
+---
+
+## [L24] pattern — Neither /specclaw:propose nor /specclaw:plan git-commits ...
+
+**When:** 2026-08-03 05:50 UTC
+**Category:** pattern
+**Priority:** medium
+**Status:** pending
+
+### Detail
+Neither /specclaw:propose nor /specclaw:plan git-commits the change's own proposal.md/spec.md/design.md/tasks.md/status.md; specclaw-build commit only stages the per-task files explicitly passed to it, so the change's planning docs sat untracked through the entire build until manually git-added and committed right before finalize's merge (following the precedent set by meeting-recording-and-history's commit 558bb1d).
+
+### Action
+Either add an explicit git-add/commit step to /specclaw:propose or /specclaw:plan for the change directory, or add one at the start of /specclaw:build's Step 1 setup, so planning docs are never left dangling untracked.
+
+---
+
+## [L25] pattern — Mid-build, another process modified .specclaw/analysis/cl...
+
+**When:** 2026-08-03 05:50 UTC
+**Category:** pattern
+**Priority:** low
+**Status:** pending
+
+### Detail
+Mid-build, another process modified .specclaw/analysis/clarifications.md and created new timestamped archive copies in the same working tree (evidently a concurrent /specclaw:clarify run) while this change's build was in progress. specclaw-build finalize's plain 'git checkout <base>' handled this safely (it only fails, never discards, on conflicting uncommitted changes), but this repo has no isolation between concurrent specclaw sessions sharing one working tree.
+
+### Action
+If concurrent specclaw sessions on the same repo become common, prefer git.strategy: worktree-per-change so each change's build runs in its own isolated working tree instead of the shared one.
+
+---

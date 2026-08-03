@@ -12,21 +12,49 @@
 | Spec | 🟢 Complete | 8 FRs, 4 NFRs, 12 ACs, 5 edge cases |
 | Design | 🟢 Complete | 2 new `PlanningService` methods, 3 message-string fixes, `TaskRow` gains a Notes section + `Meetings` parameter |
 | Tasks | 🟢 Complete | 2 tasks / 2 waves |
-| Build | ⚪ Pending | Run `/specclaw:build` next |
-| Verify | ⚪ Pending | |
+| Build | 🟢 Complete | Both tasks done; merged to master |
+| Verify | ⚪ Pending | Run `/specclaw:verify` next |
 
 ## Task Progress
 
-**Completed:** 0 / 2
+**Completed:** 2 / 2
 **Failed:** 0
 
-Planned, not yet built.
+Both tasks complete. `dotnet build` succeeds (0 errors). T1 (`AddNoteAsync`/
+`GetNotesForTaskAsync` ported to `PlanningService`; three `PlanningRules`
+message strings corrected to the legacy text, confirmed character-for-
+character against fixtures `GM-005`/`GM-006`/`GM-007`) was applied
+directly — small, fully-specified, mechanical. T2 (Notes section on
+`TaskRow`, `Meetings` parameter wiring) was built and verified end-to-end
+by a coding agent: it drove the running app through `claude-in-chrome`
+(JS-dispatched clicks, per this project's established fallback) and
+cross-checked persisted rows directly against the SQLite database for
+every acceptance criterion — AC2–AC4 (promise gating), AC5–AC8 (all three
+corrected validation messages at their exact boundaries), AC9–AC10
+(note ordering, meeting/promise display), AC11 (exactly 15
+`PlanningService` methods), AC12 (no edit/delete UI, no Accountability
+view). Scope check: `git diff` against pre-build master touched exactly
+the four declared source files plus this change's own planning docs — no
+deviation.
 
 ## Agent Runs
 
 | Task | Agent | Model | Status | Duration |
 |------|-------|-------|--------|----------|
+| T1 | (applied directly, no subagent — two small ported methods + 3 string fixes) | — | Complete | — |
+| T2 | general-purpose coding agent | sonnet | Complete | ~75 min |
 
 ## Issues
 
-_None._
+1. **A concurrent process (evidently another session running
+   `/specclaw:clarify`) modified `.specclaw/analysis/clarifications.md`
+   and created new archive copies in this same working tree while this
+   build was running.** Not caused by, and unrelated to, this change —
+   left untouched. `specclaw-build finalize`'s plain `git checkout master`
+   handled it safely (see `.specclaw/learnings.md` L25).
+2. **Neither `/specclaw:propose` nor `/specclaw:plan` committed this
+   change's own `proposal.md`/`spec.md`/`design.md`/`tasks.md`/
+   `status.md`** — they sat untracked until manually committed just
+   before `finalize`'s merge, matching the precedent set by
+   `meeting-recording-and-history`'s commit `558bb1d` (see
+   `.specclaw/learnings.md` L24).
