@@ -23,7 +23,7 @@ stay out of scope per spec.md NFR2/AC17.
 
 ### Wave 1 — Core computation
 
-- [ ] `T1` — Add `AccountabilityRow` to `Reports.cs`; add `GetAccountabilityReportAsync`/`GetAccountabilityForAllProjectsAsync` to `PlanningService`
+- [x] `T1` — Add `AccountabilityRow` to `Reports.cs`; add `GetAccountabilityReportAsync`/`GetAccountabilityForAllProjectsAsync` to `PlanningService`
   - Files: `src/ManagerPlanner.Core/Services/Reports.cs`, `src/ManagerPlanner.Core/Services/PlanningService.cs`
   - Estimate: medium
   - Depends: none
@@ -33,7 +33,7 @@ stay out of scope per spec.md NFR2/AC17.
 
 ### Wave 2 — UI (T2 and T3 are file-disjoint — run their coding agents in parallel)
 
-- [ ] `T2` — Accountability section on `ProjectDetail.razor`; `TaskRow.razor` gains a `NoteAdded` callback
+- [x] `T2` — Accountability section on `ProjectDetail.razor`; `TaskRow.razor` gains a `NoteAdded` callback
   - Files: `src/ManagerPlanner.Web/Components/Pages/ProjectDetail.razor`, `src/ManagerPlanner.Web/Components/Pages/TaskRow.razor`
   - Estimate: medium
   - Depends: `T1`
@@ -41,7 +41,7 @@ stay out of scope per spec.md NFR2/AC17.
 
     Verify manually: `dotnet build` (AC1, shared with T3). Through the running app (per `.specclaw/context.md`'s established fallback — `form_input`, `read_page` immediately before every click, default straight to JS-dispatched `element.click()`): confirm the Accountability section renders one row per task with the correct Verdict text and `Color` (AC14) — construct a few tasks/notes covering at least one "BROKE promise"/"Kept promise"/"On track" case each, cross-checked by direct DB inspection of `WorkItem`/`ProgressNote`; add a new note via a `TaskRow` and confirm the Accountability section's rows reload with the updated verdict without a manual page refresh (AC16); confirm no button/link anywhere in this section lets a user edit/act on a row (AC17, this surface's half).
 
-- [ ] `T3` — New `/accountability` page (all-projects) and its nav link
+- [x] `T3` — New `/accountability` page (all-projects) and its nav link
   - Files: `src/ManagerPlanner.Web/Components/Pages/Accountability.razor`, `src/ManagerPlanner.Web/Components/Layout/MainLayout.razor`
   - Estimate: small
   - Depends: `T1`
