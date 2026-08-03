@@ -1,6 +1,6 @@
 # Project Context
 
-_Last updated: 2026-07-31 — after "meeting-recording-and-history"._
+_Last updated: 2026-08-03 — after "progress-notes-and-promise-tracking"._
 
 ## Architecture Overview
 
@@ -36,7 +36,7 @@ assignee, deadline, description, "discovered in a meeting" checkbox — plus
 a Meetings section: a record-meeting form and a read-only history list).
 Tasks with no `ObjectiveId` render in a separate "Ungrouped" section, shown
 only when non-empty. Each task row is rendered by a shared `TaskRow.razor`
-component with three cells: its first `<td>` shows title + deadline plus
+component with four cells: its first `<td>` shows title + deadline plus
 two conditional badges — an "OVERDUE" caption (`MudText`, `Color.Error`)
 when `Deadline` is in the past and `Status != Done`, and a "⚑ discovered"
 caption (`MudText`, `Color.Warning`) when `IsDiscovered` — two computed
@@ -69,26 +69,41 @@ record-meeting form (title, `MeetingType`, participant dropdown reusing the
 page's existing `_teamMembers`, date picker) plus a read-only,
 `MeetingDate`-descending history table — rather than a new route,
 extending the page for a fifth time running instead of introducing a
-dedicated Meetings page (see Key Patterns). These are the first four
-slices of the legacy app's feature surface (Project management, Objective
-grouping, Task creation/viewing, Task status transitions), now uniformly
-restyled on MudBlazor (`ui-modernization`, the fifth merged change and the
-first pure cross-cutting UI change rather than a new vertical feature
-slice — zero `PlanningService`/`PlanningRules`/entity/migration changes
-anywhere in it). "Switching the active project" is URL navigation between
-`/projects/{id}` rows; there is no separate "current project" session
-state.
+dedicated Meetings page (see Key Patterns). `progress-notes-and-promise-tracking`
+(BL-007) then added `TaskRow.razor`'s fourth cell — a per-task Notes
+section — rather than another `ProjectDetail.razor`-level section, since
+notes are task-scoped rather than project-scoped: a read-only note history
+(`NoteDate`-descending; each row shows note text, note date, a
+promised-date line only when `IsPromise` is true, author, and the linked
+meeting's title or an em-dash placeholder) plus an add-note form (text, an
+"is a promise" checkbox gating a promised-date picker, a note-date picker
+defaulting to today, and a meeting-link dropdown). The dropdown is fed by a
+new `[Parameter] public List<Meeting> Meetings`, passed down from
+`ProjectDetail.razor`'s already-loaded `_meetings` field (no new query) —
+the same pass-an-already-loaded-list-down shape `_teamMembers` established
+for the assignee dropdown. `TaskRow` owns and loads this note list itself
+(`OnInitializedAsync`) and never calls `ProjectDetail`'s `RefreshAsync` —
+the same row-owned-local-state shape `ChecklistTree` established for
+checklist toggles, now proven on a second per-row capability. These are the
+first four slices of the legacy app's feature surface (Project management,
+Objective grouping, Task creation/viewing, Task status transitions), now
+uniformly restyled on MudBlazor (`ui-modernization`, the fifth merged
+change and the first pure cross-cutting UI change rather than a new
+vertical feature slice — zero `PlanningService`/`PlanningRules`/entity/
+migration changes anywhere in it). "Switching the active project" is URL
+navigation between `/projects/{id}` rows; there is no separate "current
+project" session state.
 
 `MainLayout.razor` is now a real `MudLayout` app shell — `MudAppBar` +
 `MudDrawer`/`MudNavMenu` with `MudNavLink`s to `/` and `/projects` — plus
 the four root Mud provider components (`MudThemeProvider`,
 `MudPopoverProvider`, `MudDialogProvider`, `MudSnackbarProvider`) living
-exactly once, app-wide, in this one file. Future backlog items (Notes/
-Accountability — still not built) can add another `MudNavLink` here if
-they warrant a dedicated route; `meeting-recording-and-history` shows a new
-capability doesn't have to, though — it shipped as a new section on the
-existing `ProjectDetail.razor` page instead of a new page/nav entry (see
-Key Patterns).
+exactly once, app-wide, in this one file. Future backlog items
+(Accountability reporting, BL-008 — still not built) can add another
+`MudNavLink` here if they warrant a dedicated route; every capability
+shipped so far — including Meetings and now Notes/promise-tracking — has
+instead landed as a new section on an existing detail page rather than a
+new page/nav entry (see Key Patterns).
 
 ## Coding Style & Conventions
 
@@ -110,9 +125,16 @@ Key Patterns).
   and date validation uses `DateTime.UtcNow` (never local `DateTime.Today`)
   with an injectable `nowUtc` parameter for testability — this matches the
   legacy `PlanningValidation.cs` exactly; don't simplify it back to
-  untrimmed/local-time checks.
+  untrimmed/local-time checks. `progress-notes-and-promise-tracking`
+  corrected three of `PlanningRules`' rejection-message string literals
+  (`ValidateNoteText`'s overlong-note message, `ValidateNoteDate`'s
+  backdated and future-dated messages) to match the legacy text verbatim —
+  the validation *logic* was already correct; only the literal strings had
+  drifted from legacy wording. Cross-check a validator's exact message text
+  against the legacy source (or a captured golden-master fixture), not just
+  its pass/fail logic.
 - Business logic lives in `ManagerPlanner.Core.Services.PlanningService` —
-  one method per legacy operation (thirteen so far), each opening/disposing
+  one method per legacy operation (fifteen so far), each opening/disposing
   its own `PlanningDbContext` via the injected `IDbContextFactory` (see Key
   Patterns). Read-model DTOs (e.g. `ProjectSummary`) live alongside it in
   `Services/Reports.cs`, matching the legacy file split. Not every method
@@ -126,9 +148,10 @@ Key Patterns).
   meeting (confirmed in that change's verify pass) — that linkage remains a
   separate, not-yet-built capability, not an oversight. `ChangeStatusAsync`
   and `ToggleChecklistItemAsync` (methods ten/eleven,
-  `nested-checklist-items-and-grid-status-badges`), and now
-  `GetMeetingsForProjectAsync`/`AddMeetingAsync` (methods twelve/thirteen,
-  `meeting-recording-and-history`), are all verbatim ports with no
+  `nested-checklist-items-and-grid-status-badges`), `GetMeetingsForProjectAsync`/
+  `AddMeetingAsync` (methods twelve/thirteen, `meeting-recording-and-history`),
+  and now `AddNoteAsync`/`GetNotesForTaskAsync` (methods fourteen/fifteen,
+  `progress-notes-and-promise-tracking`) are all verbatim ports with no
   signature deviation beyond the established `IDbContextFactory` pattern —
   `ToggleChecklistItemAsync`'s body (`item.IsDone = isDone;
   item.CompletedUtc = isDone ? DateTime.UtcNow : null;
@@ -140,9 +163,18 @@ Key Patterns).
   layer**: the empty-title check and `.Trim()` happen only in
   `ProjectDetail.razor`'s caller, mirroring the real legacy
   `MainWindowViewModel.AddMeetingAsync` caller rather than the service (see
-  the caller-to-service call-chain note below). `ui-modernization` touched
-  zero lines of this file or `Validation/` — confirmed by an empty `git
-  diff` across the whole change; it is a pure Razor/markup restyle.
+  the caller-to-service call-chain note below). **`AddNoteAsync` breaks
+  that no-service-validation pattern** — unlike `AddMeetingAsync`, it *does*
+  call `PlanningRules.ValidateNoteText`/`ValidateNoteDate` before opening
+  the DB context, exactly matching the real legacy service body. Don't
+  assume every `Add*Async` method shares `AddMeetingAsync`'s
+  caller-only-validation shape — check each method's own legacy body
+  individually. `GetNotesForTaskAsync` orders by `NoteDate` **descending**
+  (`OrderByDescending`), matching the legacy body exactly, not the
+  ascending "date-ordered timeline" a plain reading of domain-model.md's
+  prose might suggest. `ui-modernization` touched zero lines of this file
+  or `Validation/` — confirmed by an empty `git diff` across the whole
+  change; it is a pure Razor/markup restyle.
 - **Render mode is now set globally, once, in `App.razor` — not per page.**
   `<HeadOutlet @rendermode="InteractiveServer" />` and
   `<Routes @rendermode="InteractiveServer" />` cover the whole app
@@ -157,15 +189,17 @@ Key Patterns).
   global setting.
 - **`MudSelect<T>` natively supports `@bind-Value` for nullable value types
   (e.g. `MudSelect<int?>`)** — use it directly for nullable-int dropdowns
-  (Objective/Assignee pickers, "— Ungrouped —"/"— Unassigned —" → `null`)
-  instead of a manual `@onchange` handler that parses the selected string.
-  `task-management` originally used manual `OnObjectiveSelected`/
-  `OnAssigneeSelected` handlers as a workaround because plain HTML
-  `<select>` binding to `int?` wasn't trusted at the time; `ui-modernization`
-  replaced both with `MudSelect<int?>` and deleted the manual handlers as
-  dead code — same field semantics, same `null` mapping, fewer lines. Don't
-  reintroduce manual `@onchange` parsing for a new nullable dropdown; reach
-  for `MudSelect<T>` first.
+  (Objective/Assignee/Meeting pickers, "— Ungrouped —"/"— Unassigned —"/
+  "— No meeting —" → `null`) instead of a manual `@onchange` handler that
+  parses the selected string. `task-management` originally used manual
+  `OnObjectiveSelected`/`OnAssigneeSelected` handlers as a workaround
+  because plain HTML `<select>` binding to `int?` wasn't trusted at the
+  time; `ui-modernization` replaced both with `MudSelect<int?>` and deleted
+  the manual handlers as dead code — same field semantics, same `null`
+  mapping, fewer lines. `progress-notes-and-promise-tracking`'s new
+  meeting-link dropdown for notes reuses `MudSelect<int?>` the same way.
+  Don't reintroduce manual `@onchange` parsing for a new nullable dropdown;
+  reach for `MudSelect<T>` first.
 - **Never name a Blazor component parameter (or other identifier) `Task` in
   `ManagerPlanner.Web`** — `ImplicitUsings` is enabled, so `Task` collides
   with `System.Threading.Tasks.Task`; any async method referencing the bare
@@ -189,7 +223,18 @@ Key Patterns).
   invoking the service — confirmed against the real legacy
   `MainWindowViewModel.AddMeetingAsync` caller, not just
   `PlanningService.AddMeetingAsync`'s own body (meeting-recording-and-history,
-  2026-07-31).
+  2026-07-31). `progress-notes-and-promise-tracking` shows the inverse case
+  is just as important to verify: `TaskRow.razor`'s `AddNoteAsync()`
+  handler wraps its call in `catch (ManagerPlanner.Core.Validation.ValidationException
+  ex) { _noteErrorMessage = ex.Message; }`, surfacing whatever
+  `PlanningRules` rejects — and the ternary it builds
+  (`_newNoteIsPromise ? _newNotePromisedDate : null`) was confirmed against
+  *both* real legacy desktop apps' ViewModel callers
+  (`ExecutivePlanning.Desktop/ViewModels/MainWindowViewModel.cs:188` and
+  `ManagerPlanner.Desktop/ViewModels/MainViewModel.cs:164`), not just one —
+  this feature merges both legacy apps' note-taking surfaces onto the one
+  `AddNoteAsync`/`GetNotesForTaskAsync` pair, so both callers needed
+  checking.
 
 ## Key Patterns
 
@@ -199,11 +244,13 @@ Key Patterns).
   renders (ADR-0002). Every future component that touches the database
   should inject the factory and create/dispose a short-lived context per
   operation, not hold a long-lived injected `DbContext`. `ChangeStatusAsync`
-  (the tenth `PlanningService` method) and `ToggleChecklistItemAsync` (the
-  eleventh, `nested-checklist-items-and-grid-status-badges`) both follow
-  this exactly, and now so do `GetMeetingsForProjectAsync`/`AddMeetingAsync`
-  (the twelfth/thirteenth, `meeting-recording-and-history`) — same as every
-  method before them.
+  (the tenth `PlanningService` method), `ToggleChecklistItemAsync` (the
+  eleventh, `nested-checklist-items-and-grid-status-badges`),
+  `GetMeetingsForProjectAsync`/`AddMeetingAsync` (the twelfth/thirteenth,
+  `meeting-recording-and-history`), and now `AddNoteAsync`/
+  `GetNotesForTaskAsync` (the fourteenth/fifteenth,
+  `progress-notes-and-promise-tracking`) all follow this exactly — same as
+  every method before them.
 - **EF Core migrations live inside `ManagerPlanner.Core`**, not `.Web` —
   via `PlanningDbContextFactory : IDesignTimeDbContextFactory<PlanningDbContext>`
   in `Core/Data/`. This lets `dotnet ef migrations add`/`database update`
@@ -215,7 +262,7 @@ Key Patterns).
   directory) — `src/ExecutivePlanning.Core/{Domain,Data,Services}` plus the
   two desktop shells' `ViewModels`/`Views`. The `.specclaw/analysis/*.md`
   docs are prose summaries, not a substitute for it. This has now paid off
-  six times running: a mistyped `User.OwnedTasks` type and missed entity
+  seven times running: a mistyped `User.OwnedTasks` type and missed entity
   defaults in item 0; the exact `ProjectSummary.PercentComplete` rounding
   formula in item 1; the real end-to-end `Description`-trimming behavior
   living in the legacy ViewModel *caller* in `task-management`; in
@@ -227,17 +274,24 @@ Key Patterns).
   rebuild's version has (no `.ThenInclude(c => c.Assignee)` under
   `Checklist`, so a checklist item's assignee only ever resolves via EF's
   automatic relationship-fixup) — replicating that gap was the fidelity-
-  correct move, not a bug to fix; and, in `meeting-recording-and-history`,
+  correct move, not a bug to fix; in `meeting-recording-and-history`,
   confirming both `GetMeetingsForProjectAsync`/`AddMeetingAsync`'s exact
   bodies **and** that the real legacy `MainWindowViewModel.AddMeetingAsync`
-  caller — not the service — does the empty-title check and trim, read
-  directly from `../manager-planner/src/ExecutivePlanning.Core/Services/PlanningService.cs`
-  and its ViewModel caller. Read the legacy source directly at every layer
-  (entity, service, caller, and UI), not just the layer being ported.
-  (`ui-modernization` remains the one change with no legacy-fidelity
-  dimension at all — a pure rendering restyle with no legacy UI framework
-  to port from, since the legacy app is Avalonia desktop XAML, not a web
-  component library.)
+  caller — not the service — does the empty-title check and trim; and, in
+  `progress-notes-and-promise-tracking`, confirming both `AddNoteAsync`/
+  `GetNotesForTaskAsync`'s exact bodies — including that `AddNoteAsync`
+  (unlike `AddMeetingAsync`) *does* carry service-layer validation — plus
+  the exact three corrected `PlanningRules` message strings and their
+  boundary conditions (empty/2000/2001-char note text; one-month-back and
+  future note dates), cross-checked against the real legacy
+  `PlanningValidation.cs` and both legacy desktop apps' ViewModel callers,
+  plus captured golden-master fixtures `GM-005.json`/`GM-006.json`/
+  `GM-007.json` as an independent second check alongside direct source
+  reading. Read the legacy source directly at every layer (entity,
+  service, caller, and UI), not just the layer being ported. (`ui-modernization`
+  remains the one change with no legacy-fidelity dimension at all — a pure
+  rendering restyle with no legacy UI framework to port from, since the
+  legacy app is Avalonia desktop XAML, not a web component library.)
 - **Multi-collection `Include` chains need `.AsSplitQuery()` once the
   child collections are non-trivial.** Both `GetPlannerForProjectAsync`
   and `GetUngroupedTasksForProjectAsync` carry `.AsSplitQuery()` (the
@@ -247,7 +301,9 @@ Key Patterns).
   `nested-checklist-items-and-grid-status-badges` (no new `ThenInclude` was
   added for `Checklist.Assignee` — see the Ground-truth pattern above).
   `GetMeetingsForProjectAsync` (`meeting-recording-and-history`) has only a
-  single `.Include(m => m.Participant)`, so no split-query need arose there.
+  single `.Include(m => m.Participant)`, and `GetNotesForTaskAsync`
+  (`progress-notes-and-promise-tracking`) has two flat `.Include`s
+  (`Author`, `Meeting`), so no split-query need has arisen at either site.
 - **A shared row/list-item component is worth extracting the moment two
   render sites in the *same* change need identical markup** — not
   speculatively ahead of need. `TaskRow.razor` was extracted during
@@ -267,10 +323,26 @@ Key Patterns).
   `ChecklistTree.razor` deliberately has no `EventCallback` parameter at
   all — it calls `PlanningService.ToggleChecklistItemAsync` then mutates
   only its own local `item.IsDone`, because nothing else on the page
-  derives from checklist-completion state. Decide per feature whether a
-  bubble-and-refresh callback is actually needed before wiring one up;
-  don't add it reflexively just because `TaskRow`'s status buttons have
-  one.
+  derives from checklist-completion state. `progress-notes-and-promise-tracking`
+  confirms this decide-per-feature rule generalizes: `TaskRow`'s new Notes
+  section also skips the bubble-and-refresh shape entirely, loading and
+  owning its note list locally (`OnInitializedAsync`) with no callback to
+  `ProjectDetail`, because nothing on the page's summary derives from
+  note/promise state either. Two of `TaskRow`'s three sub-features
+  (checklist, notes) are now local-state-only; only the status buttons
+  bubble up, because only status feeds the page-level summary counts.
+  Decide per feature whether a bubble-and-refresh callback is actually
+  needed before wiring one up; don't add it reflexively just because
+  `TaskRow`'s status buttons have one.
+- **Pass an already-loaded page-level list down as a component
+  `[Parameter]` rather than re-querying inside a child component.**
+  `ProjectDetail.razor` loads `_teamMembers`/`_meetings` once per page load;
+  `TaskRow`'s assignee dropdown already consumed `_teamMembers` this way,
+  and `progress-notes-and-promise-tracking`'s new meeting-link dropdown for
+  notes reuses the identical shape via a new `[Parameter] public
+  List<Meeting> Meetings` rather than adding a per-row query. Reach for
+  this whenever a child component needs a small, already-loaded,
+  page-scoped reference list.
 - **Recursive Blazor components for self-similar tree data — one
   component, not one per depth level.** `ChecklistTree.razor` (new,
   `nested-checklist-items-and-grid-status-badges`) takes a
@@ -285,17 +357,21 @@ Key Patterns).
   `Shared/` folder was introduced for one component, matching the existing
   flat layout. Follow this same recursive-component-in-`Pages/` shape for
   any future self-similar tree UI rather than special-casing depth levels.
-- **Every backlog item so far extends `ProjectDetail.razor` with a new
-  page section rather than introducing a new route.**
+- **Every backlog item so far extends `ProjectDetail.razor`/`TaskRow.razor`
+  with a new section rather than introducing a new route.**
   `meeting-recording-and-history`'s Meetings capability — a record-meeting
   form plus a read-only, `MeetingDate`-descending history table — was
   added as a new section on the existing page, the same shape every prior
   vertical slice (Objective grouping, Task creation, Task status
-  transitions, nested checklists) used. This updates the assumption baked
-  into `MainLayout.razor`'s original nav-menu note ("future pages just add
-  another `MudNavLink`") — a new capability doesn't necessarily need a new
-  route/nav entry; check whether it belongs on an existing detail page
-  first before scaffolding a new one.
+  transitions, nested checklists) used;
+  `progress-notes-and-promise-tracking` then did the same one level down,
+  adding its Notes history/form as a new cell on the existing `TaskRow`
+  rather than a page-level section, since notes are task-scoped. This
+  updates the assumption baked into `MainLayout.razor`'s original nav-menu
+  note ("future pages just add another `MudNavLink`") — a new capability
+  doesn't necessarily need a new route/nav entry; check whether it belongs
+  on an existing detail page (or existing row component) first before
+  scaffolding a new one.
 - **Enums render via their own `.ToString()` — no humanizer, no
   display-name converter, anywhere in the UI.** `MeetingType`'s dropdown
   (`@foreach (var type in Enum.GetValues<MeetingType>())` →
@@ -312,9 +388,11 @@ Key Patterns).
   needing an "owner"/"current user" calls `PlanningService.GetCurrentManagerIdAsync()`
   rather than assuming a signed-in user, resolving it **fresh on every
   call** rather than caching it on the component — `TaskRow.razor`'s
-  per-click status handler does this the same way `Projects.razor`'s
-  `AddProjectAsync` handler already did. Expected to be replaced, not
-  extended, once a real auth ADR exists (ADR-0001 defers this).
+  per-click status handler and its new `AddNoteAsync` handler
+  (`progress-notes-and-promise-tracking`) both do this the same way
+  `Projects.razor`'s `AddProjectAsync` handler already did. Expected to be
+  replaced, not extended, once a real auth ADR exists (ADR-0001 defers
+  this).
 - **Parallel-agent delegation for disjoint-file sub-tasks within one
   wave.** When a change's tasks touch completely non-overlapping files
   (e.g. `ui-modernization`'s Wave 2: Home/Error vs. Projects vs.
@@ -363,16 +441,20 @@ Key Patterns).
   this is the established default for this project, not a fallback to
   diagnose into. Pair it with a scratch console app (or direct DB
   inspection) querying the live SQLite file when persisted-state evidence
-  from the browser alone is in doubt. **Note:**
-  `nested-checklist-items-and-grid-status-badges` **and**
-  `meeting-recording-and-history` both shipped with no such runtime/DB
-  verification artifact despite each verify pass flagging the gap
+  from the browser alone is in doubt. **`nested-checklist-items-and-grid-status-badges`
+  and `meeting-recording-and-history` both shipped with no such runtime/DB
+  verification artifact** despite each verify pass flagging the gap
   (`verify-report.md`'s sole Issue, twice running) — both were instead
   verified by exact code-level parity against already-tested/ported legacy
-  logic. Prefer actually running the scratch-console/browser check
-  `tasks.md` specifies when a UI change ships without a test project to
-  fall back on; two changes running without one is a pattern worth
-  breaking, not settled precedent to keep leaning on.
+  logic. **`progress-notes-and-promise-tracking` broke that pattern**: per
+  its `status.md`, a coding agent drove the running app via
+  `claude-in-chrome` and cross-checked persisted SQLite rows for every
+  acceptance criterion, including exact validation-message text at the
+  empty/2000/2001-char and one-month-back/future-date boundaries —
+  independently confirmed by the verify pass's code-plus-golden-master-fixture
+  re-check, with no discrepancy found. Keep defaulting to live browser/DB
+  verification when a test project doesn't exist; this change shows it's
+  still the stronger check when actually run.
 - **`tasks.md` line-wrapping silently breaks `specclaw-parse-tasks`** — hit
   twice now (`task-management`'s T2, then `task-status-transitions`'s T2
   again). If a task's title line or `Files:` line wraps across two lines
@@ -397,7 +479,19 @@ Key Patterns).
   deliberately uses `DateTime.UtcNow`, not the real legacy caller's local
   `DateTimeOffset.Now` — a conscious deviation from literal
   caller-fidelity, chosen because this project's no-local-time constraint
-  outranks matching that one legacy detail.
+  outranks matching that one legacy detail. `progress-notes-and-promise-tracking`'s
+  note-date and promised-date pickers both default to UTC values
+  (`_newNoteDate` to `UtcNow.Date`, `_newNotePromisedDate` to
+  `UtcNow.AddDays(7)`), continuing the same rule.
+- **Cross-check validator/service message text and boundary conditions
+  against captured golden-master fixtures, not just the legacy source
+  reading alone.** `progress-notes-and-promise-tracking` used
+  `.specclaw/baseline/fixtures/GM-005.json`/`GM-006.json`/`GM-007.json` to
+  independently confirm `PlanningRules`' exact rejection strings and the
+  precise empty/2000/2001-char and one-month-back/tomorrow date boundaries
+  — an additional, automatable check alongside direct legacy-source
+  reading, useful whenever a golden-master capture already exists for the
+  validator being ported.
 
 ## Technology Decisions
 
@@ -421,7 +515,11 @@ Key Patterns).
   `WorkItem.DiscoveredInMeeting`'s `SetNull`) were already scaffolded in
   `InitialCreate` by `scaffold-blazor-solution`, confirmed unchanged by
   this change's `git diff` touching only `PlanningService.cs` and
-  `ProjectDetail.razor`.
+  `ProjectDetail.razor`. `progress-notes-and-promise-tracking` needed none
+  either — `ProgressNote` and every relevant relationship (`Author`,
+  `Meeting`, `WorkItem`) already existed in `InitialCreate`, confirmed by
+  this change's diff touching only `PlanningService.cs`, `PlanningRules.cs`,
+  `ProjectDetail.razor`, and `TaskRow.razor`.
 - **.NET 8** — matches the legacy solution's target framework exactly, to
   avoid a version gap ahead of future fidelity comparisons.
 - **MudBlazor 9.7.0** as the component/CSS framework (`ui-modernization`)
@@ -430,14 +528,14 @@ Key Patterns).
   before this change (not even Bootstrap). Chosen over building custom CSS
   because it ships complete form controls (`MudSelect`, `MudDatePicker`),
   layout primitives (`MudLayout`/`MudAppBar`/`MudDrawer`), and dialog/
-  snackbar/popover infrastructure the not-yet-built Notes/Meetings/
-  Accountability pages will need. Its bundled CSS/JS
-  (`_content/MudBlazor/MudBlazor.min.css`/`.min.js`) is the only new
-  asset — no external CDN reference (e.g. Google Fonts) was added,
-  preserving the project's local-first character (matches the SQLite-only
-  backend's no-external-network-dependency pattern). Version left
-  unpinned in the design step by choice but resolved to `9.7.0` at
-  restore time and is now pinned in `ManagerPlanner.Web.csproj`.
+  snackbar/popover infrastructure the not-yet-built Accountability page
+  will need. Its bundled CSS/JS (`_content/MudBlazor/MudBlazor.min.css`/
+  `.min.js`) is the only new asset — no external CDN reference (e.g.
+  Google Fonts) was added, preserving the project's local-first character
+  (matches the SQLite-only backend's no-external-network-dependency
+  pattern). Version left unpinned in the design step by choice but
+  resolved to `9.7.0` at restore time and is now pinned in
+  `ManagerPlanner.Web.csproj`.
 - **Badges and other meaning-carrying UI use MudBlazor's semantic `Color`
   enum, not custom CSS/hex values.** The original color-coded `MudChip`
   status badge established this; `nested-checklist-items-and-grid-status-badges`
@@ -462,7 +560,11 @@ Key Patterns).
   (e.g. the `IsOverdue`-checked-before-promise-pending order in
   `AccountabilityRow.Verdict`) — ADR-0005 requires a golden-master capture
   and an explicit product decision before deviating, not a "senior-engineer
-  cleanup."
+  cleanup." Now that `ProgressNote` creation/read exists
+  (`progress-notes-and-promise-tracking`), this is directly relevant: the
+  not-yet-built Accountability reporting item (BL-008) reads a task's
+  *latest* `ProgressNote` promise to compute `Verdict` — don't build that
+  view's precedence logic ahead of its own backlog item either.
 - **Don't silently "restore" a legacy fast-path when a change deliberately
   replaces it.** `task-management` replaced Manager Planner Desktop's
   per-objective inline fast-add (title-only, `assigneeId: null`, hardcoded
@@ -497,17 +599,18 @@ Key Patterns).
   embedded-status-buttons-per-row pattern into `MudTable`'s API — a
   full `MudTable` rewrite would be a real, higher-risk restructuring, not
   a drop-in upgrade. The Meetings history table
-  (`meeting-recording-and-history`) follows the same rule — a plain
-  read-only `MudSimpleTable`, not `MudTable`.
+  (`meeting-recording-and-history`) and the new Notes history list
+  (`progress-notes-and-promise-tracking`) both follow the same rule — a
+  plain read-only `MudSimpleTable`/list, not `MudTable`.
 - **No UI creates or deletes a checklist item, or edits its assignee —
   `ToggleChecklistItemAsync` is the only checklist mutation that exists.**
   `nested-checklist-items-and-grid-status-badges` confirmed exactly 11
   `PlanningService` methods existed at that point (10 existing + this
-  one); two more (`GetMeetingsForProjectAsync`/`AddMeetingAsync`) were
-  added by `meeting-recording-and-history`, but neither touches checklist
-  items — adding create/delete/assignee-edit for checklist items remains a
-  separate, not-yet-decided backlog item, not something to bolt onto
-  `ChecklistTree` incidentally.
+  one); `GetMeetingsForProjectAsync`/`AddMeetingAsync` and now
+  `AddNoteAsync`/`GetNotesForTaskAsync` were added since (fifteen total),
+  but none of them touch checklist items — adding create/delete/
+  assignee-edit for checklist items remains a separate, not-yet-decided
+  backlog item, not something to bolt onto `ChecklistTree` incidentally.
 - **Don't add `.ThenInclude(c => c.Assignee)` under the `Checklist`
   collection in `GetPlannerForProjectAsync`/`GetUngroupedTasksForProjectAsync`
   to "complete" the Include chain.** The real legacy
@@ -517,20 +620,29 @@ Key Patterns).
   (`ExecutivePlanning.Core/Services/PlanningService.cs:136-142`).
   Replicating the gap is correct fidelity; "fixing" it would be an
   unrequested deviation.
+- **Don't add a secondary sort key to `GetNotesForTaskAsync`'s
+  `OrderByDescending(n => n.NoteDate)` for notes sharing an identical
+  date.** The real legacy service has the same single-key sort gap
+  (already true of `GetProjectsAsync`/`GetMeetingsForProjectAsync` too) —
+  documented as an accepted edge case in
+  `progress-notes-and-promise-tracking`'s verify report, not a bug to fix.
 - **`git.strategy: branch-per-change`'s `finalize` step auto-merges the
   feature branch into `master` locally** — it does not leave the branch
   open for a separate GitHub PR. If a real reviewable PR is wanted for a
   future change, that needs deciding *before* running `/specclaw:build`
   (or accept that `/specclaw:pr` will find head==base and a straight
   `git push` is the only option left). Confirmed a sixth time on
-  `nested-checklist-items-and-grid-status-badges`, and a seventh time on
-  `meeting-recording-and-history`.
+  `nested-checklist-items-and-grid-status-badges`, a seventh time on
+  `meeting-recording-and-history`, and an eighth time on
+  `progress-notes-and-promise-tracking`.
 - **Don't add a `ValidationException`/`PlanningRules` check to
   `AddMeetingAsync`.** The real legacy service has none; the empty-title
   check and `.Trim()` belong at the caller (`ProjectDetail.razor`),
   matching the real legacy `MainWindowViewModel.AddMeetingAsync`, the same
   caller-side-validation shape already established for `AddTaskAsync`'s
-  `Description` handling.
+  `Description` handling. (Contrast `AddNoteAsync`, which *does* validate
+  at the service layer — don't generalize one method's shape to another
+  without checking its own legacy body.)
 - **Don't add a humanizer/display-name converter for `MeetingType` (or any
   other enum) without checking the legacy source first.** Plain
   `.ToString()` literal rendering (`VideoCall`/`PhysicalMeeting`/
@@ -546,10 +658,37 @@ Key Patterns).
   creation (`AddMeetingAsync`) and read (`GetMeetingsForProjectAsync`); no
   control sets `WorkItem.DiscoveredInMeetingId`, and there's no edit/delete
   for `Meeting` — those are separate, not-yet-decided backlog items.
+- **Don't add a UI control that edits or deletes an existing
+  `ProgressNote`, and don't build an Accountability/`Verdict` view yet.**
+  `progress-notes-and-promise-tracking` added only creation
+  (`AddNoteAsync`) and read (`GetNotesForTaskAsync`) — confirmed by its
+  full diff touching only `PlanningService.cs` (+35/-0, additive),
+  `PlanningRules.cs` (message-string edits only), `ProjectDetail.razor`
+  (+2/-2, just the new `Meetings` parameter on two `<TaskRow>` tags), and
+  `TaskRow.razor` (+101, additive). Both note edit/delete and the
+  Accountability/`Verdict` view (rebuild-backlog item 8, which depends on
+  this one) remain separate, not-yet-built capabilities.
 
 ## Recent Decisions
 
-1. **`AddMeetingAsync` carries zero validation at the service layer — the
+1. **`AddNoteAsync` ported with full service-layer validation
+   (`PlanningRules.ValidateNoteText`/`ValidateNoteDate`) — unlike
+   `AddMeetingAsync`'s caller-only validation.** Confirmed by reading the
+   real legacy service body directly; don't assume a uniform
+   validation-shape across similarly-named `Add*Async` methods
+   (progress-notes-and-promise-tracking, 2026-08-03).
+2. **Three `PlanningRules` rejection-message strings (note-too-long,
+   backdated, future-dated) corrected to verbatim legacy text**, cross-checked
+   against both the real legacy source and captured golden-master fixtures
+   `GM-005.json`/`GM-006.json`/`GM-007.json` — the validators' logic was
+   already correct; only the literal message strings had drifted
+   (progress-notes-and-promise-tracking, 2026-08-03).
+3. **`TaskRow` now owns and loads its own Notes list locally
+   (`OnInitializedAsync`), with no `EventCallback` to `ProjectDetail`.**
+   Continues `ChecklistTree`'s row-owned-local-state shape onto a second
+   per-row capability, since nothing on the page's summary derives from
+   note/promise state (progress-notes-and-promise-tracking, 2026-08-03).
+4. **`AddMeetingAsync` carries zero validation at the service layer — the
    page-level caller does the check.** `ProjectDetail.razor`'s
    `AddMeetingAsync()` handler does the `IsNullOrWhiteSpace` guard and
    `.Trim()` itself before calling `PlanningService.AddMeetingAsync`,
@@ -557,26 +696,8 @@ Key Patterns).
    service (which never validates) — the same caller-side-validation shape
    as `AddTaskAsync`'s `Description` trimming
    (meeting-recording-and-history, 2026-07-31).
-2. **Meetings was added as a new section on the existing
+5. **Meetings was added as a new section on the existing
    `ProjectDetail.razor` page, not a new route.** Continues the
    established pattern of every prior backlog item extending this same
    page rather than introducing a new page/nav entry per feature
    (meeting-recording-and-history, 2026-07-31).
-3. **The meeting date-picker's "no date chosen" fallback uses
-   `DateTime.UtcNow`, not the real legacy caller's local
-   `DateTimeOffset.Now`.** A deliberate deviation from literal
-   legacy-caller fidelity, chosen to preserve this project's existing
-   no-local-time constraint (meeting-recording-and-history, 2026-07-31).
-4. **Checklist toggles update local component state only — no
-   `EventCallback`, no `ProjectDetail.RefreshAsync`.** Unlike `TaskRow`'s
-   status buttons (whose `StatusChanged` callback exists because the
-   page's summary counts depend on status), nothing else on the page
-   derives from checklist-completion state, so `ChecklistTree.razor` calls
-   `PlanningService.ToggleChecklistItemAsync` and then just mutates
-   `item.IsDone` locally (nested-checklist-items-and-grid-status-badges,
-   2026-07-31).
-5. **Deliberately did not add `.ThenInclude(c => c.Assignee)` under
-   `Checklist`** — the real legacy `GetPlannerForProjectAsync` has the same
-   gap (assignee resolves only via EF relationship-fixup, never an
-   explicit Include); replicating it is correct fidelity, not a bug to fix
-   (nested-checklist-items-and-grid-status-badges, 2026-07-31).
