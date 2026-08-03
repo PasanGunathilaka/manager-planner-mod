@@ -425,3 +425,18 @@ A verbatim port of legacy DeleteTaskAsync (plain FindAsync + Remove + SaveChange
 Before assuming any legacy PlanningService method is a safe verbatim port for this IDbContextFactory-per-call architecture, check whether it deletes/reads across a self-referencing or otherwise order-sensitive relationship (ChecklistItem.ParentId is the only current self-reference) -- if so, verify behavior with a fresh, untracked context specifically, not just a shared-context test, before trusting the port. BL-010 (Project deletion) will hit this same gap one level deeper (Project -> WorkItem -> ChecklistItem) and needs the same .Include treatment; flag this explicitly in that item's future proposal/design.
 
 ---
+
+## [L29] best_practice — Nesting an interactive element (e.g. a MudIconButton) ins...
+
+**When:** 2026-08-03 15:06 UTC
+**Category:** best_practice
+**Priority:** medium
+**Status:** pending
+
+### Detail
+Nesting an interactive element (e.g. a MudIconButton) inside a MudListItem/anything that renders as a native <a href> requires BOTH @onclick:stopPropagation AND @onclick:preventDefault on the wrapping element, not stopPropagation alone. stopPropagation only blocks ancestor event LISTENERS (e.g. Blazor's own document-level enhanced-navigation interceptor) from firing; it does not suppress a native anchor's own default navigation action, which is governed purely by whether preventDefault() was called anywhere during the event's dispatch. Confirmed by reading the actual server-rendered HTML for Projects.razor's project rows: MudListItem with Href set renders as a genuine <a href=...>, not a Blazor-synthetic click handler. Caught this by reasoning through DOM event semantics during project-deletion's T2 verification (browser click-through testing was unavailable in this environment for both the coding agent and the build orchestrator), then confirmed the fix by inspecting the rendered HTML for both __internal_stopPropagation_onclick and __internal_preventDefault_onclick markers -- this is code-level + DOM-inspection evidence, not an observed interactive click, and should be spot-checked live the next time browser automation tooling is available.
+
+### Action
+Whenever adding a second click-target (button/icon) inside an existing Href-driven MudListItem/MudNavLink/anchor-rendering component, always pair @onclick:stopPropagation with @onclick:preventDefault on the wrapper, and verify via rendered HTML (or a live click) that both internal markers are present -- do not assume stopPropagation alone is sufficient just because it compiles and looks right.
+
+---
