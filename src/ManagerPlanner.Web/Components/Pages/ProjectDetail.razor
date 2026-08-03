@@ -155,7 +155,7 @@ else
                     <tbody>
                         @foreach (var task in objective.Tasks)
                         {
-                            <TaskRow WorkItem="task" StatusChanged="RefreshAsync" />
+                            <TaskRow WorkItem="task" StatusChanged="RefreshAsync" Meetings="_meetings" />
                         }
                     </tbody>
                 </MudSimpleTable>
@@ -170,7 +170,7 @@ else
             <tbody>
                 @foreach (var task in _ungroupedTasks)
                 {
-                    <TaskRow WorkItem="task" StatusChanged="RefreshAsync" />
+                    <TaskRow WorkItem="task" StatusChanged="RefreshAsync" Meetings="_meetings" />
                 }
             </tbody>
         </MudSimpleTable>

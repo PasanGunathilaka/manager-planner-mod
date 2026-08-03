@@ -38,6 +38,62 @@
             <text>&mdash;</text>
         }
     </td>
+    <td>
+        @if (_notes is null)
+        {
+            <MudText>Loading notes&hellip;</MudText>
+        }
+        else if (_notes.Count == 0)
+        {
+            <MudText>No notes yet.</MudText>
+        }
+        else
+        {
+            @foreach (var note in _notes)
+            {
+                <div style="margin-bottom:0.5rem;">
+                    <div>@note.Text</div>
+                    <div style="font-size:0.85em;color:#606060;">
+                        @note.NoteDate.ToString("yyyy-MM-dd") — @note.Author.FullName — @(note.Meeting?.Title ?? "—")
+                    </div>
+                    @if (note.IsPromise)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Warning">Promise due @note.PromisedDate?.ToString("yyyy-MM-dd")</MudText>
+                    }
+                </div>
+            }
+        }
+
+        @if (!string.IsNullOrEmpty(_noteErrorMessage))
+        {
+            <MudAlert Severity="Severity.Error">@_noteErrorMessage</MudAlert>
+        }
+
+        <EditForm Model="this" OnValidSubmit="AddNoteAsync">
+            <div>
+                <MudTextField @bind-Value="_newNoteText" Label="Note" Lines="3" />
+            </div>
+            <div>
+                <MudCheckBox @bind-Value="_newNoteIsPromise" Label="This is a promise" />
+            </div>
+            <div>
+                <MudDatePicker @bind-Date="_newNotePromisedDate" Label="Promised date" Disabled="@(!_newNoteIsPromise)" />
+            </div>
+            <div>
+                <MudDatePicker @bind-Date="_newNoteDate" Label="Note date" />
+            </div>
+            <div>
+                <MudSelect T="int?" @bind-Value="_newNoteMeetingId" Label="Meeting">
+                    <MudSelectItem Value="@((int?)null)">&mdash; No meeting &mdash;</MudSelectItem>
+                    @foreach (var meeting in Meetings)
+                    {
+                        <MudSelectItem Value="@((int?)meeting.Id)">@meeting.Title</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Add note</MudButton>
+        </EditForm>
+    </td>
 </tr>
 
 @code {
@@ -46,6 +102,9 @@
 
     [Parameter]
     public EventCallback StatusChanged { get; set; }
+
+    [Parameter]
+    public List<Meeting> Meetings { get; set; } = new();
 
     private string StatusText => WorkItem.Status switch
     {
@@ -69,10 +128,52 @@
 
     private bool IsDiscovered => WorkItem.IsDiscovered;
 
+    private List<ProgressNote>? _notes;
+    private string _newNoteText = string.Empty;
+    private bool _newNoteIsPromise;
+    private DateTime? _newNotePromisedDate = DateTime.UtcNow.AddDays(7);
+    private DateTime? _newNoteDate = DateTime.UtcNow.Date;
+    private int? _newNoteMeetingId;
+    private string? _noteErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _notes = await PlanningService.GetNotesForTaskAsync(WorkItem.Id);
+    }
+
     private async Task SetStatusAsync(WorkItemStatus newStatus)
     {
         var changedById = await PlanningService.GetCurrentManagerIdAsync();
         await PlanningService.ChangeStatusAsync(WorkItem.Id, newStatus, changedById);
         await StatusChanged.InvokeAsync();
+    }
+
+    private async Task AddNoteAsync()
+    {
+        var authorId = await PlanningService.GetCurrentManagerIdAsync();
+        try
+        {
+            await PlanningService.AddNoteAsync(
+                WorkItem.Id,
+                _newNoteText,
+                authorId,
+                _newNoteMeetingId,
+                _newNoteIsPromise,
+                _newNoteIsPromise ? _newNotePromisedDate : null,
+                _newNoteDate);
+
+            _newNoteText = string.Empty;
+            _newNoteIsPromise = false;
+            _newNotePromisedDate = DateTime.UtcNow.AddDays(7);
+            _newNoteDate = DateTime.UtcNow.Date;
+            _newNoteMeetingId = null;
+            _noteErrorMessage = null;
+
+            _notes = await PlanningService.GetNotesForTaskAsync(WorkItem.Id);
+        }
+        catch (ManagerPlanner.Core.Validation.ValidationException ex)
+        {
+            _noteErrorMessage = ex.Message;
+        }
     }
 }
