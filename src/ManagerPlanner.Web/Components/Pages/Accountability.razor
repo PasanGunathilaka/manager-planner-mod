@@ -1,0 +1,63 @@
+@page "/accountability"
+@inject PlanningService PlanningService
+
+<PageTitle>Accountability</PageTitle>
+
+<h1>Accountability</h1>
+
+@if (_rows is null)
+{
+    <MudAlert Severity="Severity.Info">Loading accountability&hellip;</MudAlert>
+}
+else if (_rows.Count == 0)
+{
+    <MudText>No tasks yet.</MudText>
+}
+else
+{
+    <MudSimpleTable Hover="true" Dense="true">
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Task</th>
+                <th>Assignee</th>
+                <th>Status</th>
+                <th>Deadline</th>
+                <th>Promised</th>
+                <th>Verdict</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in _rows)
+            {
+                <tr>
+                    <td>@row.ProjectName</td>
+                    <td>@row.TaskTitle</td>
+                    <td>@row.AssigneeName</td>
+                    <td>@row.Status</td>
+                    <td>@(row.Deadline?.ToString("yyyy-MM-dd") ?? "—")</td>
+                    <td>@(row.LatestPromisedDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                    <td><MudChip T="string" Color="@VerdictColor(row.Verdict)" Size="Size.Small">@row.Verdict</MudChip></td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+}
+
+@code {
+    private List<AccountabilityRow>? _rows;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _rows = await PlanningService.GetAccountabilityForAllProjectsAsync();
+    }
+
+    private Color VerdictColor(string verdict) => verdict switch
+    {
+        "Kept promise" => Color.Success,
+        "BROKE promise" => Color.Error,
+        "Overdue (no promise)" => Color.Warning,
+        "Promise pending" => Color.Info,
+        _ => Color.Default
+    };
+}
