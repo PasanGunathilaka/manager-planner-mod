@@ -337,4 +337,27 @@ public class PlanningService
             .ThenBy(r => r.Deadline ?? DateTime.MaxValue)
             .ToList();
     }
+
+    /// <summary>
+    /// Deletes a task and its checklist, notes, owners and status history (cascade).
+    /// Unlike the legacy body (a plain FindAsync + Remove), this loads the Checklist
+    /// collection first. ChecklistItem.ParentId is Restrict (self-reference), not Cascade,
+    /// so SQLite's own FK-cascade engine can't resolve a multi-level checklist tree from a
+    /// cold context — it needs the child rows already tracked so EF Core's client-side
+    /// cascade (which orders self-referencing deletes correctly) runs instead of the raw
+    /// DB cascade. Confirmed by direct reproduction: this exact call shape throws
+    /// "FOREIGN KEY constraint failed" against a fresh IDbContextFactory-created context
+    /// whenever the task has a parent+child checklist item — every call in this app gets a
+    /// fresh context, so this isn't an edge case, it's every call with a nested checklist.
+    /// </summary>
+    public async Task DeleteTaskAsync(int taskId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+
+        var t = await db.WorkItems.Include(w => w.Checklist).FirstOrDefaultAsync(w => w.Id == taskId);
+        if (t is null) return;
+
+        db.WorkItems.Remove(t);
+        await db.SaveChangesAsync();
+    }
 }

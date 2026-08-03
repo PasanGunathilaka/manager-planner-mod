@@ -17,7 +17,7 @@ project deletion, a `DeleteUserAsync` method, undo/soft-delete, or a
 
 ### Wave 1 — Core business logic
 
-- [ ] `T1` — Add `DeleteTaskAsync` to `PlanningService`
+- [x] `T1` — Add `DeleteTaskAsync` to `PlanningService`
   - Files: `src/ManagerPlanner.Core/Services/PlanningService.cs`
   - Estimate: small
   - Depends: none
@@ -27,7 +27,7 @@ project deletion, a `DeleteUserAsync` method, undo/soft-delete, or a
 
 ### Wave 2 — Component + verification
 
-- [ ] `T2` — Delete icon button, confirmation dialog, and refresh wiring on `TaskRow`/`ProjectDetail`
+- [x] `T2` — Delete icon button, confirmation dialog, and refresh wiring on `TaskRow`/`ProjectDetail`
   - Files: `src/ManagerPlanner.Web/Components/Pages/TaskRow.razor`, `src/ManagerPlanner.Web/Components/Pages/ProjectDetail.razor`
   - Estimate: medium
   - Depends: `T1`
