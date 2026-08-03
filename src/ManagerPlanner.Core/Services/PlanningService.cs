@@ -215,4 +215,39 @@ public class PlanningService
         await db.SaveChangesAsync();
         return meeting;
     }
+
+    public async Task<ProgressNote> AddNoteAsync(int taskId, string text, int authorId,
+        int? meetingId = null, bool isPromise = false, DateTime? promisedDate = null,
+        DateTime? noteDate = null)
+    {
+        PlanningRules.ValidateNoteText(text);
+        var effectiveDate = noteDate ?? DateTime.UtcNow;
+        PlanningRules.ValidateNoteDate(effectiveDate);
+
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var note = new ProgressNote
+        {
+            WorkItemId = taskId,
+            Text = text.Trim(),
+            AuthorId = authorId,
+            MeetingId = meetingId,
+            IsPromise = isPromise,
+            PromisedDate = promisedDate,
+            NoteDate = effectiveDate
+        };
+        db.ProgressNotes.Add(note);
+        await db.SaveChangesAsync();
+        return note;
+    }
+
+    public async Task<List<ProgressNote>> GetNotesForTaskAsync(int taskId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.ProgressNotes
+            .Include(n => n.Author)
+            .Include(n => n.Meeting)
+            .Where(n => n.WorkItemId == taskId)
+            .OrderByDescending(n => n.NoteDate)
+            .ToListAsync();
+    }
 }

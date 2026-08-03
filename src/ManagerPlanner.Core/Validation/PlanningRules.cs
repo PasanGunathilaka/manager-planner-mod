@@ -90,7 +90,7 @@ public static class PlanningRules
 
         if (t.Length > MaxNoteText)
         {
-            throw new ValidationException($"The note is too long — it cannot exceed {MaxNoteText} characters.");
+            throw new ValidationException($"The note is too long. Keep it under {MaxNoteText} characters.");
         }
     }
 
@@ -102,12 +102,12 @@ public static class PlanningRules
 
         if (d < earliestAllowed)
         {
-            throw new ValidationException($"The note date cannot be more than {NoteBackdateMonths} month(s) in the past.");
+            throw new ValidationException($"That date is more than a month back. Notes can only be dated on or after {earliestAllowed:MMM dd, yyyy}.");
         }
 
         if (d > today)
         {
-            throw new ValidationException("The note date cannot be in the future.");
+            throw new ValidationException("A note cannot be dated in the future.");
         }
     }
 }
