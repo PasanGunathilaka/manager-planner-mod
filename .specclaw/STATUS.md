@@ -1,7 +1,7 @@
 # 🦞 SpecClaw Dashboard
 
 **Project:** manager-planner-mod
-**Last Updated:** 2026-08-03 12:38 UTC
+**Last Updated:** 2026-08-03 12:50 UTC
 
 ## Active Changes
 
@@ -11,6 +11,7 @@
 - 🔨 **nested-checklist-items-and-grid-status-badges** — 2/3 tasks (66%) | 0 failed
 - 🔨 **planner-grid** — 2/3 tasks (66%) | 0 failed
 - 🔨 **progress-notes-and-promise-tracking** — 2/3 tasks (66%) | 0 failed
+- 🔨 **project-deletion** — 0/3 tasks (0%) | 0 failed
 - 🔨 **project-management** — 5/6 tasks (83%) | 0 failed
 - 🔨 **scaffold-blazor-solution** — 7/8 tasks (87%) | 0 failed
 - 🔨 **task-deletion** — 2/3 tasks (66%) | 0 failed
@@ -20,8 +21,7 @@
 
 ## Pending Proposals
 
-
-- 📋 **project-deletion** — proposal ready, awaiting planning
+_None._
 
 ## Recently Completed
 
@@ -29,6 +29,6 @@ _None._
 
 ## Stats
 
-- **Total changes:** 11
-- **Active:** 11
+- **Total changes:** 12
+- **Active:** 12
 - **Completed:** 0
