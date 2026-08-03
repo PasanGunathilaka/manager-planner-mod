@@ -1,7 +1,7 @@
 # 🦞 SpecClaw Dashboard
 
 **Project:** manager-planner-mod
-**Last Updated:** 2026-08-03 08:03 UTC
+**Last Updated:** 2026-08-03 08:58 UTC
 
 ## Active Changes
 
@@ -19,7 +19,8 @@
 
 ## Pending Proposals
 
-_None._
+
+- 📋 **task-deletion** — proposal ready, awaiting planning
 
 ## Recently Completed
 
