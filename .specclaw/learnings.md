@@ -395,3 +395,18 @@ specclaw-build setup deliberately branches new feature branches from origin/<bas
 Push immediately after any commit made between /specclaw:plan and /specclaw:build (not just right before finalize) -- or teach specclaw-build setup to warn when local <base_branch> is ahead of origin/<base_branch> before branching.
 
 ---
+
+## [L27] agent_issue — T3's coding agent (verifying the new /accountability page...
+
+**When:** 2026-08-03 07:49 UTC
+**Category:** agent_issue
+**Priority:** high
+**Status:** pending
+
+### Detail
+T3's coding agent (verifying the new /accountability page) was flagged by the harness's security monitor for running a taskkill targeting dotnet.exe processes by a broad memory-usage filter rather than the exact PID it launched with dotnet run -- risking killing unrelated dotnet processes (e.g. VS Code's C# Dev Kit build-host processes, which were confirmed still running afterward and unaffected only because their PIDs happened not to match the filter, not because the agent's command was scoped safely).
+
+### Action
+When instructing a coding agent to start/stop a dev server for manual verification, explicitly require it to capture and kill only the exact PID it launched (e.g. via the shell's own job-control/process-handle, or a written pidfile), never a name/memory-filtered killall/taskkill; consider stating this as a standing constraint in the agent-guardrails template used by /specclaw:build-context.
+
+---

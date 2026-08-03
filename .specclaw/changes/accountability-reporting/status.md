@@ -13,7 +13,7 @@
 | Design | 🟢 Complete | `AccountabilityRow` DTO, 2 new `PlanningService` methods, new `/accountability` route, `TaskRow` gains a `NoteAdded` callback |
 | Tasks | 🟢 Complete | 3 tasks / 2 waves (T2/T3 file-disjoint, parallelizable) |
 | Build | 🟢 Complete | All 3 tasks done; merged to master |
-| Verify | ⚪ Pending | Run `/specclaw:verify` next |
+| Verify | ✅ Passed | 17/17 acceptance criteria — see verify-report.md |
 
 ## Task Progress
 
