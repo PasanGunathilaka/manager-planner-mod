@@ -13,7 +13,7 @@
 | Design | 🟢 Complete | 2 new `PlanningService` methods, 3 message-string fixes, `TaskRow` gains a Notes section + `Meetings` parameter |
 | Tasks | 🟢 Complete | 2 tasks / 2 waves |
 | Build | 🟢 Complete | Both tasks done; merged to master |
-| Verify | ⚪ Pending | Run `/specclaw:verify` next |
+| Verify | ✅ Passed | 12/12 acceptance criteria — see verify-report.md |
 
 ## Task Progress
 
