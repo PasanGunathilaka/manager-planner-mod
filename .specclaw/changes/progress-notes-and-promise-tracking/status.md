@@ -44,6 +44,16 @@ deviation.
 | T1 | (applied directly, no subagent — two small ported methods + 3 string fixes) | — | Complete | — |
 | T2 | general-purpose coding agent | sonnet | Complete | ~75 min |
 
+## PR
+
+**No PR was created** — `specclaw-pr` failed with "head branch \"master\"
+is the same as base branch \"master\", cannot create a pull request," the
+same known `git.strategy: branch-per-change`/`finalize` limitation
+confirmed across every prior change in this project. `specclaw-pr`'s own
+`git push` step ran regardless and succeeded — the change is live on
+`origin/master` as of commit `821b902`:
+https://github.com/PasanGunathilaka/manager-planner-mod
+
 ## Issues
 
 1. **A concurrent process (evidently another session running
