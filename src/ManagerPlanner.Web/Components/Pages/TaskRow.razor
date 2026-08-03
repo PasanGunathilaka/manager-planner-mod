@@ -1,4 +1,5 @@
 @inject PlanningService PlanningService
+@inject IDialogService DialogService
 
 <tr>
     <td>
@@ -94,6 +95,9 @@
             <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Add note</MudButton>
         </EditForm>
     </td>
+    <td>
+        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="DeleteTaskAsync" />
+    </td>
 </tr>
 
 @code {
@@ -108,6 +112,9 @@
 
     [Parameter]
     public EventCallback NoteAdded { get; set; }
+
+    [Parameter]
+    public EventCallback TaskDeleted { get; set; }
 
     private string StatusText => WorkItem.Status switch
     {
@@ -178,6 +185,16 @@
         catch (ManagerPlanner.Core.Validation.ValidationException ex)
         {
             _noteErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteTaskAsync()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync("Delete task", $"Delete task '{WorkItem.Title}' and its checklist and notes?\nThis cannot be undone.", yesText: "Delete", cancelText: "Cancel");
+        if (confirmed == true)
+        {
+            await PlanningService.DeleteTaskAsync(WorkItem.Id);
+            await TaskDeleted.InvokeAsync();
         }
     }
 }
