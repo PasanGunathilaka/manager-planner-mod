@@ -360,4 +360,24 @@ public class PlanningService
         db.WorkItems.Remove(t);
         await db.SaveChangesAsync();
     }
+
+    /// <summary>
+    /// Deletes a project and everything under it (objectives, tasks, meetings, and
+    /// transitively each task's checklist/notes/status history/owners) — cascade.
+    /// Same reasoning as DeleteTaskAsync applies one level deeper: this loads each task's
+    /// Checklist collection first, since ChecklistItem.ParentId is Restrict (self-reference)
+    /// and SQLite's own FK-cascade engine can't resolve that multi-level tree from a cold,
+    /// untracked context. Do not simplify this back to a plain FindAsync + Remove.
+    /// </summary>
+    public async Task DeleteProjectAsync(int projectId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+
+        var p = await db.Projects.Include(pr => pr.Tasks).ThenInclude(t => t.Checklist)
+            .FirstOrDefaultAsync(pr => pr.Id == projectId);
+        if (p is null) return;
+
+        db.Projects.Remove(p);
+        await db.SaveChangesAsync();
+    }
 }
