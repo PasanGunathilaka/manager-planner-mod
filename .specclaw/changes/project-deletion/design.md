@@ -12,14 +12,19 @@
    before removing (see Key Decision 1 — already confirmed necessary and
    sufficient before this design was written, not a build-time
    discovery).
-2. Extend `Projects.razor`'s existing `MudList`/`MudListItem` loop with a
-   `MudIconButton` (`Icons.Material.Filled.Delete`, `Color.Error`) inside
-   each item's child content, using `@onclick:stopPropagation` so it
-   doesn't also trigger the item's own `Href` navigation. Its click
-   handler calls `IDialogService.ShowMessageBoxAsync` with the exact
-   legacy confirmation text, and — only if the result is `true` — calls
-   `PlanningService.DeleteProjectAsync(project.Id)` then reloads
-   `_projects`.
+2. Extend `Projects.razor`'s existing `MudList`/`MudListItem` loop.
+   **Superseded during verify remediation (see Key Decision 2, updated):**
+   the Delete button is NOT nested inside an `Href`-driven `MudListItem`
+   at all. `MudListItem`'s `Href` is removed; each row is a manual flex
+   `<div>` containing a plain sibling `<a href="/projects/{id}">` (name/
+   description only) and the `MudIconButton` as a true DOM sibling
+   outside the anchor's hit area — no `stopPropagation`/`preventDefault`
+   needed, since there is no ancestor anchor to race against. Each
+   `MudListItem` also carries `@key="project.Id"` (see Key Decision 2).
+   The button's click handler calls `IDialogService.ShowMessageBoxAsync`
+   with the exact legacy confirmation text, and — only if the result is
+   `true` — calls `PlanningService.DeleteProjectAsync(project.Id)` then
+   reloads `_projects`.
 3. No entity, schema, or migration changes — every cascade relationship
    this deletion relies on already exists.
 
@@ -36,15 +41,18 @@ src/ManagerPlanner.Core/Services/PlanningService.cs   (extended)
          ChecklistItem tree needs to be tracked first)
 
 src/ManagerPlanner.Web/Components/Pages/Projects.razor   (extended)
-├── existing: MudList of projects (Href-navigable MudListItem per project)
-│   └── new: MudIconButton(Icons.Material.Filled.Delete), @onclick:stopPropagation
-│       └── DeleteProjectAsync(project) handler
-│           └── DialogService.ShowMessageBoxAsync("Delete project",
-│                 "Delete project '{name}' and all its objectives, tasks,
-│                  checklist items and notes?\nThis cannot be undone.",
-│                 yesText: "Delete", cancelText: "Cancel")
-│               → if true: PlanningService.DeleteProjectAsync(project.Id)
-│                   → _projects = await PlanningService.GetProjectsAsync();
+├── existing: MudList of projects
+│   └── MudListItem[@key=project.Id] (Href removed — see Key Decision 2)
+│       └── flex <div> row
+│           ├── plain sibling <a href="/projects/{id}"> (name/description)
+│           └── MudIconButton(Icons.Material.Filled.Delete)  [sibling, not nested in the <a>]
+│               └── DeleteProjectAsync(project) handler
+│                   └── DialogService.ShowMessageBoxAsync("Delete project",
+│                         "Delete project '{name}' and all its objectives, tasks,
+│                          checklist items and notes?\nThis cannot be undone.",
+│                         yesText: "Delete", cancelText: "Cancel")
+│                       → if true: PlanningService.DeleteProjectAsync(project.Id)
+│                           → _projects = await PlanningService.GetProjectsAsync();
 └── existing: "Add project" form (unchanged)
 ```
 
@@ -85,28 +93,62 @@ None. No HTTP/JSON API — the component calls `PlanningService` directly.
    correctly from a cold context without being included — only the
    self-referencing subtree needs tracking. No further investigation is
    needed during build; this is a known, verified fact going in.
-2. **The Delete icon button uses both `@onclick:stopPropagation` AND
-   `@onclick:preventDefault`, not `stopPropagation` alone.** `MudListItem<T>`
-   with `Href` set (confirmed via reflection against the installed
-   `MudBlazor.dll`, 9.7.0, and independently confirmed by reading the
-   actual server-rendered HTML during build verification) renders as a
-   genuine native `<a href="...">` element, not a Blazor-only synthetic
-   click handler. `stopPropagation` alone prevents the click from
-   bubbling to any ancestor *listener* (including whatever click
-   interception Blazor's enhanced-navigation JS attaches at the document
-   level), but does **not** suppress the browser's own native default
-   action for an `<a>` element — that requires `preventDefault`
-   specifically, per the DOM event spec (a native anchor's default
-   navigation is tied to whether `preventDefault()` was called anywhere
-   during the event's dispatch, independent of whether propagation to
-   other listeners was stopped). Verified via the actual rendered HTML
-   after adding it: the wrapping `<span>` carries both
-   `__internal_stopPropagation_onclick` and
-   `__internal_preventDefault_onclick` markers. Placing an interactive
-   icon button inside `MudListItem`'s child content with both modifiers
-   is the correct, minimal way to add a second action to an
-   already-`Href`-clickable row, without replacing `Href` with a manual
-   `OnClick`/`NavigationManager.NavigateTo` scheme.
+2. **SUPERSEDED after verify FAIL — the Delete button is a structural
+   sibling of the row's `<a>`, not nested inside an `Href`-driven
+   `MudListItem`.** The original approach (`@onclick:stopPropagation` +
+   `@onclick:preventDefault` on a wrapper around the button, nested
+   inside `MudListItem Href="..."`) was confirmed correct at the DOM-event
+   level (see the superseded rationale below) and passed rendered-HTML
+   inspection, but **live click-through testing during `/specclaw:verify`
+   found it insufficient in practice**: 7 of 9 real clicks on the Delete
+   icon still navigated to the project detail page instead of opening the
+   dialog. Root cause: this app uses the unified .NET 8 Blazor Web App
+   model (`App.razor`: `<Routes @rendermode="InteractiveServer" />`,
+   `blazor.web.js`), which enables **enhanced navigation** by default — a
+   document-level click interceptor for same-origin anchors that operates
+   independently of a component's own `@onclick` modifiers. Even both
+   modifiers together could not reliably defeat it. **Fix (per explicit
+   user direction — "Restructure as sibling"):** removed `Href` from
+   `MudListItem` entirely; each row is now a manual flex `<div>` with a
+   plain `<a href="/projects/{id}">` (name/description only) and the
+   `MudIconButton` as a true DOM sibling, structurally outside the
+   anchor's hit area — there is no ancestor-anchor relationship left to
+   race against, so no `stopPropagation`/`preventDefault` is needed at
+   all. Re-verified live (post-fix): across a second, careful round of
+   paced click-through testing, the dialog correctly appeared on every
+   deliberate retry, Cancel correctly aborted with no service call, a
+   confirmed Delete correctly removed only the intended row and reloaded
+   the list with no manual refresh, and normal name-link navigation to
+   `/projects/{id}` continued to work. One incidental data point from
+   this same testing round: a project was once removed from the list
+   with no confirming click observed in between two consecutive tool
+   calls (name "Key-fix test A"'s predecessor — the "ggg" project);
+   direct DB inspection confirmed a genuine deletion, not a rendering
+   glitch. This was traced to the `@foreach` loop having no `@key`, so
+   Blazor's diffing could reuse/reassign DOM nodes positionally across a
+   re-render (this list reorders on every add, since it's
+   `OrderByDescending(CreatedUtc)` and new rows insert at the top) —
+   fixed by adding `@key="project.Id"` to `MudListItem`. No further
+   unconfirmed/wrong-row deletions occurred in subsequent testing after
+   that fix. A residual, low-frequency (~1 in 5) "click produces no
+   visible reaction at all" case remains even after both fixes — every
+   such case was a no-op (neither a dialog nor a navigation nor a
+   deletion), and a deliberate retry always then worked; this reads as
+   click-dispatch latency in the CDP-based test tooling itself (which
+   independently showed several unrelated flakiness symptoms this
+   session — stale tab state, viewport-size fluctuation across
+   `read_page` calls) rather than an application defect, but was not
+   root-caused with certainty.
+   - **Superseded rationale (kept for record):** `MudListItem<T>` with
+     `Href` set (confirmed via reflection against the installed
+     `MudBlazor.dll`, 9.7.0) renders as a genuine native `<a href="...">`
+     element. `stopPropagation` alone prevents a click from bubbling to
+     any ancestor *listener* but does not suppress a native anchor's own
+     default navigation — that requires `preventDefault` specifically.
+     This reasoning was correct as far as it went; it just didn't account
+     for enhanced navigation being a document-level interceptor that
+     `preventDefault` on the button's own wrapper span did not reliably
+     reach in time under real click timing.
 3. **Reload `_projects` after a successful delete, reusing
    `AddProjectAsync`'s existing shape** — no new refresh/callback
    mechanism is introduced. `Projects.razor` has no parent/child
@@ -162,21 +204,32 @@ None. No HTTP/JSON API — the component calls `PlanningService` directly.
   comment on the method itself (matching `task-deletion`'s own
   precedent) — a future reader hits the explanation before assuming the
   `Include` is decorative.
-- **Risk (materialized during build, then fixed):** `@onclick:stopPropagation`
-  alone was initially used on the Delete button; reasoning through the
-  actual rendered markup (`MudListItem` with `Href` renders as a genuine
-  native `<a>`) revealed this would not suppress the anchor's own default
-  navigation, since `stopPropagation` only blocks ancestor *listeners*,
-  not a native element's default action — only `preventDefault` does that.
-  **Mitigation:** added `@onclick:preventDefault="true"` alongside
-  `stopPropagation`; confirmed via the actual server-rendered HTML that
-  both modifiers are now present on the wrapping element. A full
-  interactive click-through (dialog appears, Cancel/Confirm behavior, no
-  stray navigation) could not be performed in this environment (browser
-  automation extension unavailable to both the build agent and the
-  build orchestrator) — AC3/AC4/AC6 rest on this code-level fix plus
-  DOM-inspection evidence, not an observed click, and should be spot-checked
-  live the next time browser tooling is available.
+- **Risk (materialized during build, then found insufficient during
+  verify, then fixed for real):** `@onclick:stopPropagation` +
+  `@onclick:preventDefault` on a wrapper nested inside `MudListItem
+  Href="..."` looked correct by DOM-event reasoning and rendered-HTML
+  inspection, but `/specclaw:verify`'s live click-through testing found
+  it still lost to Blazor Web App's document-level enhanced navigation
+  in 7 of 9 real clicks (see Key Decision 2). **Mitigation:** restructured
+  the row so the Delete button is a DOM sibling of the `<a>`, not nested
+  inside it — no ancestor-anchor relationship exists to race against,
+  so no event modifier is needed at all. Re-verified with genuine live
+  clicks (not just markup inspection) post-fix; the dialog, Cancel, and
+  confirmed-Delete paths all behaved correctly across a second round of
+  careful testing. **Lesson:** for this project, an interactive
+  click-through is required to trust AC3/AC4/AC6-shaped criteria —
+  rendered-HTML/DOM-event reasoning alone let a real regression through
+  once already.
+- **Risk (found live during remediation testing, fixed):** the
+  `@foreach` over `_projects` had no `@key`, and this list reorders on
+  every add (`OrderByDescending(CreatedUtc)`, newest first) — Blazor's
+  positional DOM-node reuse under those conditions can let a diff
+  reassign an element (or a not-yet-flushed click) to the wrong logical
+  row after a re-render. One project was observed deleted between two
+  tool calls with no confirming click in between; DB inspection
+  confirmed it was a genuine deletion, not a display glitch.
+  **Mitigation:** added `@key="project.Id"` to `MudListItem`. No further
+  unconfirmed or wrong-row deletions occurred in subsequent testing.
 - **Risk:** forgetting the reload-after-delete step would leave a stale,
   now-nonexistent project visible in the list until a manual page
   refresh. **Mitigation:** FR4/AC4 require confirming the row disappears

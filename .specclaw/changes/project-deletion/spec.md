@@ -42,9 +42,14 @@ full `GM-024` shape.
    Delete" flow — every prior item in this rebuild (status, checklist,
    notes, task deletion) already acts directly on a row rather than
    reviving the legacy's selection-based interaction model, and this item
-   follows the same shape. The button uses `@onclick:stopPropagation`
-   so clicking it does not also trigger the row's existing `Href`
-   navigation to `/projects/{id}`.
+   follows the same shape. The button must not also trigger navigation to
+   `/projects/{id}`; the confirmed-working implementation places it as a
+   structural DOM sibling of the row's navigation link rather than nested
+   inside it (an initial `@onclick:stopPropagation`/`preventDefault`
+   nested-wrapper approach passed rendered-HTML inspection but failed
+   live click-through testing against Blazor Web App's enhanced
+   navigation — see design.md Key Decision 2 and
+   `.specclaw/learnings.md` L30).
 3. **FR3 — A confirmation dialog via MudBlazor's `IDialogService`**,
    reusing the exact mechanism `task-deletion` established
    (`ShowMessageBoxAsync`), reproducing the real legacy text verbatim,

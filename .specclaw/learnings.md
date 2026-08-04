@@ -431,12 +431,33 @@ Before assuming any legacy PlanningService method is a safe verbatim port for th
 **When:** 2026-08-03 15:06 UTC
 **Category:** best_practice
 **Priority:** medium
-**Status:** pending
+**Status:** superseded by [L30]
 
 ### Detail
 Nesting an interactive element (e.g. a MudIconButton) inside a MudListItem/anything that renders as a native <a href> requires BOTH @onclick:stopPropagation AND @onclick:preventDefault on the wrapping element, not stopPropagation alone. stopPropagation only blocks ancestor event LISTENERS (e.g. Blazor's own document-level enhanced-navigation interceptor) from firing; it does not suppress a native anchor's own default navigation action, which is governed purely by whether preventDefault() was called anywhere during the event's dispatch. Confirmed by reading the actual server-rendered HTML for Projects.razor's project rows: MudListItem with Href set renders as a genuine <a href=...>, not a Blazor-synthetic click handler. Caught this by reasoning through DOM event semantics during project-deletion's T2 verification (browser click-through testing was unavailable in this environment for both the coding agent and the build orchestrator), then confirmed the fix by inspecting the rendered HTML for both __internal_stopPropagation_onclick and __internal_preventDefault_onclick markers -- this is code-level + DOM-inspection evidence, not an observed interactive click, and should be spot-checked live the next time browser automation tooling is available.
 
 ### Action
 Whenever adding a second click-target (button/icon) inside an existing Href-driven MudListItem/MudNavLink/anchor-rendering component, always pair @onclick:stopPropagation with @onclick:preventDefault on the wrapper, and verify via rendered HTML (or a live click) that both internal markers are present -- do not assume stopPropagation alone is sufficient just because it compiles and looks right.
+
+**Superseded by L30:** live click-through testing during project-deletion's `/specclaw:verify` found that even both modifiers together are NOT reliably sufficient in this app -- see L30.
+
+---
+
+## [L30] agent_issue — stopPropagation+preventDefault together still lost to Blazor Web App's enhanced navigation live; @foreach without @key caused an unconfirmed deletion
+
+**When:** 2026-08-04 00:00 UTC
+**Category:** agent_issue
+**Priority:** high
+**Status:** pending
+
+### Detail
+Two distinct bugs surfaced during project-deletion's verify-then-remediate cycle, both only visible under genuine live browser clicks (not rendered-HTML inspection):
+
+(1) L29's fix (`@onclick:stopPropagation` + `@onclick:preventDefault` on a wrapper nested inside `MudListItem Href="..."`) was confirmed correct by DOM-event reasoning and by inspecting the rendered HTML for both internal markers -- but `/specclaw:verify`'s independent live click-through testing found it still lost 7 of 9 real clicks to navigation instead of showing the dialog. Root cause: this app uses the unified .NET 8 Blazor Web App hosting model (`App.razor`: `<Routes @rendermode="InteractiveServer" />`, `blazor.web.js`), which enables **enhanced navigation** by default -- a document-level click interceptor for same-origin anchors that operates as a separate mechanism from a component's own `@onclick` modifiers, and evidently is not reliably defeated by them even when both are present. Fixed (per explicit user direction, "restructure as sibling") by removing `Href` from `MudListItem` and making the Delete button a true DOM sibling of a plain `<a>`, rather than nested inside an anchor at all -- structurally eliminating the race instead of fighting it. Re-verified live: dialog/Cancel/confirmed-Delete all worked correctly across a careful second testing round.
+
+(2) During that same live-testing round (before applying fix (3) below), a project ("ggg") was found deleted from the DB with no confirming click observed between two consecutive tool calls. Root cause: the `@foreach` over `_projects` (ordered `OrderByDescending(CreatedUtc)`, so every add reorders the list, inserting at the top) had no `@key`, so Blazor's diffing could reuse/reassign DOM nodes positionally across a re-render, letting a click or element reference intended for one row land on a different logical row after a reorder. Fixed by adding `@key="project.Id"` to `MudListItem`. No further unconfirmed or wrong-row deletions occurred in subsequent testing after this fix.
+
+### Action
+(1) For any button/icon that must NOT trigger an ancestor's `Href`-driven navigation in a Blazor Web App with `InteractiveServer`/enhanced navigation enabled, do not rely on `@onclick:stopPropagation`/`@onclick:preventDefault` on a nested wrapper -- restructure the row so the action button is a DOM sibling of the anchor, not a descendant, and verify with a genuine live click (not just rendered-HTML inspection), since HTML inspection alone let this exact regression through project-deletion's own build verification once already. (2) Always add `@key` to any `@foreach` driving a Blazor list that can reorder, insert, or remove items mid-session (e.g. anything sorted by a mutable/insertion-order column) -- its absence is a genuine data-safety risk (a misattributed click on the wrong row), not just a rendering nit, confirmed by this session's real (if low-stakes) unconfirmed deletion.
 
 ---

@@ -19,15 +19,17 @@ else
     <MudList T="int">
         @foreach (var project in _projects)
         {
-            <MudListItem T="int" Href="@($"/projects/{project.Id}")">
-                @project.Name
-                @if (!string.IsNullOrWhiteSpace(project.Description))
-                {
-                    <text> &mdash; @project.Description</text>
-                }
-                <span @onclick:stopPropagation="true" @onclick:preventDefault="true">
+            <MudListItem T="int" @key="project.Id">
+                <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                    <a href="@($"/projects/{project.Id}")" style="flex:1;text-decoration:none;color:inherit;">
+                        @project.Name
+                        @if (!string.IsNullOrWhiteSpace(project.Description))
+                        {
+                            <text> &mdash; @project.Description</text>
+                        }
+                    </a>
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteProjectAsync(project)" />
-                </span>
+                </div>
             </MudListItem>
         }
     </MudList>

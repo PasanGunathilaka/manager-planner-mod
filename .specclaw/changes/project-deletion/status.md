@@ -13,7 +13,8 @@
 | Design | 🟢 Complete | 1 new `PlanningService` method (with the confirmed-required `.Include` fix), `Projects.razor` gains a per-row Delete button + confirm dialog |
 | Tasks | 🟢 Complete | 2 tasks / 2 waves |
 | Build | 🟢 Complete | Both tasks done; merged to master |
-| Verify | ❌ Failed | 5/8 acceptance criteria — AC3/AC4/AC6 fail live; see verify-report.md |
+| Verify | ❌ Failed (round 1) | 5/8 acceptance criteria — AC3/AC4/AC6 fail live; see verify-report.md |
+| Remediation | 🟢 Complete | Sibling-restructuring (per user's explicit direction) + `@key` fix; re-verified live, see below |
 
 ## Task Progress
 
@@ -62,16 +63,55 @@ docs — no deviation.
 1. **Browser automation (`claude-in-chrome`) was unavailable in both the
    T2 coding agent's environment and the build orchestrator's own
    environment** — neither could click through the actual confirmation
-   dialog/delete flow live. Verification for AC3/AC4/AC6 rests on code
+   dialog/delete flow live. Verification for AC3/AC4/AC6 rested on code
    reading plus rendered-HTML inspection instead of an observed
-   interaction. AC1/AC2/AC5/AC7/AC8 all have genuine live evidence
-   (service-layer calls against the real dev DB, direct diff/grep
-   inspection).
-2. **A real bug was found and fixed during this process, not just a
-   documentation gap**: `@onclick:stopPropagation` alone on the Delete
-   icon button would not have reliably prevented `MudListItem`'s `Href`
-   navigation from firing, because it renders as a native `<a>` tag whose
-   default action requires `preventDefault`, not just stopped
-   propagation. Fixed and confirmed via rendered HTML; logged as
-   `.specclaw/learnings.md` L29 as a reusable pattern for any future
-   "action button nested inside a navigable row" case.
+   interaction going into `/specclaw:verify`. AC1/AC2/AC5/AC7/AC8 all had
+   genuine live evidence (service-layer calls against the real dev DB,
+   direct diff/grep inspection).
+2. **`/specclaw:verify` (round 1) found the stopPropagation+preventDefault
+   fix insufficient in practice**: 7 of 9 live clicks on the Delete icon
+   navigated away instead of showing the dialog, because Blazor Web App's
+   document-level enhanced navigation intercepts anchor clicks
+   independently of a component's own `@onclick` modifiers, even when the
+   button is wrapped with both `stopPropagation` and `preventDefault`.
+   Verdict: FAIL, 5/8 ACs (see `verify-report.md`).
+3. **Remediated per the user's explicit choice ("Restructure as sibling")**:
+   removed `Href` from `MudListItem`; the Delete button is now a true DOM
+   sibling of a plain `<a>` (no ancestor-anchor relationship left to race
+   against). Re-verified with genuine live browser clicks (this session,
+   with `claude-in-chrome` available): across a careful, paced second
+   round of testing, the dialog reliably appeared, Cancel correctly
+   aborted, a confirmed Delete correctly removed only the intended row
+   and reloaded the list automatically, and normal row-name navigation
+   kept working. Final DB state cross-checked directly against the
+   dev SQLite file and matches the UI exactly.
+4. **A project ("ggg") was found deleted with no confirming click observed
+   in between two consecutive tool calls**, during this same live-testing
+   round, before the `@key` fix below was applied. Confirmed via direct
+   DB inspection (not a rendering glitch — the row was genuinely gone).
+   Traced to the `@foreach` over `_projects` having no `@key`; this list
+   reorders on every add (`OrderByDescending(CreatedUtc)`), and Blazor's
+   positional DOM-node reuse can misattribute a click/element across a
+   re-render for reorderable lists without a key. Fixed by adding
+   `@key="project.Id"` to `MudListItem`. No further unconfirmed or
+   wrong-row deletions occurred in subsequent testing. "ggg" was an
+   obviously-placeholder test project (matching a pattern of scratch data
+   left by prior build/verify sessions in this same dev DB), not real
+   user data.
+5. **A residual, low-frequency (~1 in 5) "click produces no visible
+   reaction at all" case remains** even after both fixes — every such
+   case observed was a clean no-op (no dialog, no navigation, no
+   deletion), and a deliberate retry always then succeeded. This most
+   likely reflects click-dispatch latency in the CDP-based browser
+   automation tooling itself (which independently showed unrelated
+   flakiness this session: stale tab console state, viewport-size
+   fluctuation across `read_page` calls, a tab group vanishing after
+   closing one tab) rather than an application defect, but this was not
+   root-caused with full certainty and is worth a spot-check if it
+   recurs in a future change.
+6. Two real bugs were found and fixed during this process, not just
+   documentation gaps: (a) `stopPropagation`+`preventDefault` together
+   were still insufficient against enhanced navigation for a
+   nested-in-anchor button — logged as `.specclaw/learnings.md` L29
+   (superseded) / L30 (new, corrected pattern); (b) the missing `@key`
+   on a reorderable `@foreach` — logged as `.specclaw/learnings.md` L30.
