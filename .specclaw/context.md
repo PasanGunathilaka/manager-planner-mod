@@ -1,6 +1,6 @@
 # Project Context
 
-_Last updated: 2026-08-03 — after "task-deletion"._
+_Last updated: 2026-08-04 — after "project-deletion"._
 
 ## Architecture Overview
 
@@ -989,3 +989,44 @@ item uncovered, which BL-010 will hit again one level deeper).
    with a still-future promised date reports "Overdue (no promise)", never
    "Promise pending"), confirmed by golden-master fixtures `GM-008`–`GM-012`
    (accountability-reporting, 2026-08-03).
+6. **`DeleteProjectAsync` confirmed the identical fresh-context cascade gap
+   one level deeper than `task-deletion` predicted** (`Project` →
+   `WorkItem` → `ChecklistItem`, not just `WorkItem` → `ChecklistItem`) —
+   `.Include(p => p.Tasks).ThenInclude(t => t.Checklist)` before removing
+   was confirmed necessary and sufficient *before* the design was written
+   this time, not discovered mid-build, closing the loop `task-deletion`
+   opened (project-deletion, 2026-08-04).
+7. **Nesting a second click-target inside an `Href`-driven `MudListItem`
+   is unreliable in this app even with both `@onclick:stopPropagation` AND
+   `@onclick:preventDefault` on the wrapper** — `/specclaw:verify`'s live
+   click-through testing (round 1) found 7 of 9 real clicks on a nested
+   Delete icon still navigated away, because this app's Blazor Web App
+   hosting model (`<Routes @rendermode="InteractiveServer" />`,
+   `blazor.web.js`) enables **enhanced navigation** by default — a
+   document-level anchor-click interceptor operating independently of a
+   component's own `@onclick` modifiers. Rendered-HTML inspection alone
+   (confirming both `__internal_stopPropagation_onclick` and
+   `__internal_preventDefault_onclick` markers were present) was
+   insufficient to catch this; only a genuine live click-through
+   surfaced it. **Fix: restructure the action button as a DOM sibling of
+   the anchor, not a descendant** — eliminates the race structurally
+   instead of fighting it with event modifiers. Re-verified PASS (8/8)
+   with real live clicks after the fix (project-deletion, 2026-08-04; see
+   `.specclaw/learnings.md` L29→L30).
+8. **A `@foreach` over a list that reorders on insert (`_projects`,
+   `OrderByDescending(CreatedUtc)`, newest first) needs `@key` on the
+   rendered item, or Blazor's positional DOM-node diffing can misattribute
+   a click/element to the wrong logical row after a re-render** — caught
+   live when a project was found deleted with no confirming click observed
+   in between two tool calls; direct DB inspection confirmed a genuine,
+   if low-stakes (test data), deletion. Fixed by adding `@key="project.Id"`
+   to `MudListItem`; no further unconfirmed/wrong-row deletions occurred
+   afterward. Worth checking for on any other reorderable `@foreach` in
+   this rebuild (project-deletion, 2026-08-04).
+9. **`project-deletion` is the rebuild's first change to fail
+   `/specclaw:verify` outright and go through an explicit user-directed
+   remediation-and-re-verify cycle** (round 1 FAIL 5/8 → fix → round 2
+   PASS 8/8), rather than catching every issue before or during build —
+   confirms live click-through testing is load-bearing for any
+   click-target that shares DOM space with an existing navigable element,
+   not an optional nice-to-have (project-deletion, 2026-08-04).
