@@ -13,8 +13,7 @@
 | Design | 🟢 Complete | 1 new `PlanningService` method (with the confirmed-required `.Include` fix), `Projects.razor` gains a per-row Delete button + confirm dialog |
 | Tasks | 🟢 Complete | 2 tasks / 2 waves |
 | Build | 🟢 Complete | Both tasks done; merged to master |
-| Verify | ❌ Failed (round 1) | 5/8 acceptance criteria — AC3/AC4/AC6 fail live; see verify-report.md |
-| Remediation | 🟢 Complete | Sibling-restructuring (per user's explicit direction) + `@key` fix; re-verified live, see below |
+| Verify | ✅ Passed (round 2) | Round 1: FAIL, 5/8 (AC3/AC4/AC6 failed live). Round 2 (after remediation): PASS, 8/8 — see verify-report.md |
 
 ## Task Progress
 
@@ -115,3 +114,14 @@ docs — no deviation.
    nested-in-anchor button — logged as `.specclaw/learnings.md` L29
    (superseded) / L30 (new, corrected pattern); (b) the missing `@key`
    on a reorderable `@foreach` — logged as `.specclaw/learnings.md` L30.
+7. **Round-2 re-verification (independent agent, own `claude-in-chrome`
+   session, own dev-server instance on a fresh port) confirmed PASS,
+   8/8** — genuine live click-through evidence for AC3/AC4/AC6 (6
+   confirmed deletes across 6 distinct rows, a Cancel, a positive
+   navigation check, zero stray navigations across 8 Delete-icon
+   clicks), plus independently-reproduced AC2/AC5 cascade evidence via
+   its own scratch harness, and direct diff-based AC7/AC8 checks. It
+   also hit the same ~1-in-5 no-op click flakiness independently (1 of
+   8 attempts) and reached the same conclusion: a clean, retry-resolved
+   no-op, not disqualifying. All of its own throwaway test projects were
+   cleaned up; the 5 pre-existing real projects were untouched.
