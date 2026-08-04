@@ -13,7 +13,7 @@
 | Design | 🟢 Complete | 1 new `PlanningService` method (with the confirmed-required `.Include` fix), `Projects.razor` gains a per-row Delete button + confirm dialog |
 | Tasks | 🟢 Complete | 2 tasks / 2 waves |
 | Build | 🟢 Complete | Both tasks done; merged to master |
-| Verify | ⚪ Pending | Run `/specclaw:verify` next |
+| Verify | ❌ Failed | 5/8 acceptance criteria — AC3/AC4/AC6 fail live; see verify-report.md |
 
 ## Task Progress
 
